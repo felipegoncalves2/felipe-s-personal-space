@@ -1,12 +1,14 @@
 import { useState, useEffect, useCallback, useMemo, useRef } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { LogOut, Maximize, Minimize } from 'lucide-react';
 import { AdaptiveDonutChart } from '@/components/presentation/AdaptiveDonutChart';
+import { AdaptiveSLADonutChart } from '@/components/presentation/AdaptiveSLADonutChart';
 import { useMonitoringData } from '@/hooks/useMonitoringData';
+import { useSLAData } from '@/hooks/useSLAData';
 import { usePresentationSettings } from '@/hooks/usePresentationSettings';
 import { useAdaptiveLayout, useViewportSize } from '@/hooks/useAdaptiveLayout';
-import { MonitoringData } from '@/types';
+import { MonitoringData, SLAData, MonitoringTabType } from '@/types';
 import logoTechub from '@/assets/logo_techub.jpg';
 
 // Header and footer heights for layout calculation
@@ -14,9 +16,21 @@ const HEADER_HEIGHT = 72;
 const FOOTER_HEIGHT = 40;
 const CONTENT_PADDING = 24;
 
+type PresentationItem = MonitoringData | SLAData;
+
+function isSLAData(item: PresentationItem): item is SLAData {
+  return 'nome' in item && 'dentro' in item && 'fora' in item;
+}
+
 export default function PresentationPage() {
   const navigate = useNavigate();
-  const { data, isLoading } = useMonitoringData();
+  const [searchParams] = useSearchParams();
+  const tabParam = searchParams.get('tab') as MonitoringTabType | null;
+  const activeTab: MonitoringTabType = tabParam || 'mps';
+
+  const { data: mpsData, isLoading: mpsLoading } = useMonitoringData();
+  const { data: slaFilaData, isLoading: slaFilaLoading } = useSLAData('fila');
+  const { data: slaProjetosData, isLoading: slaProjetosLoading } = useSLAData('projetos');
   const { settings } = usePresentationSettings();
   const viewport = useViewportSize();
   
@@ -26,23 +40,52 @@ export default function PresentationPage() {
   const hideTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const containerRef = useRef<HTMLDivElement>(null);
 
+  // Get current data based on active tab
+  const { rawData, isLoading, title, itemLabel } = useMemo(() => {
+    switch (activeTab) {
+      case 'sla-fila':
+        return {
+          rawData: slaFilaData as PresentationItem[],
+          isLoading: slaFilaLoading,
+          title: 'SLA Fila RN',
+          itemLabel: 'filas',
+        };
+      case 'sla-projetos':
+        return {
+          rawData: slaProjetosData as PresentationItem[],
+          isLoading: slaProjetosLoading,
+          title: 'SLA Projetos RN',
+          itemLabel: 'projetos',
+        };
+      default:
+        return {
+          rawData: mpsData as PresentationItem[],
+          isLoading: mpsLoading,
+          title: 'Monitoramento MPS',
+          itemLabel: 'empresas',
+        };
+    }
+  }, [activeTab, mpsData, slaFilaData, slaProjetosData, mpsLoading, slaFilaLoading, slaProjetosLoading]);
+
   // Filter data based on settings
   const filteredData = useMemo(() => {
-    if (!data.length) return [];
+    if (!rawData.length) return [];
 
-    return data.filter((item) => {
+    return rawData.filter((item) => {
+      const percentual = isSLAData(item) ? item.percentual : (item as MonitoringData).percentual;
+
       // Filter by percentage range
-      if (settings.min_percentage !== null && item.percentual < settings.min_percentage) {
+      if (settings.min_percentage !== null && percentual < settings.min_percentage) {
         return false;
       }
-      if (settings.max_percentage !== null && item.percentual > settings.max_percentage) {
+      if (settings.max_percentage !== null && percentual > settings.max_percentage) {
         return false;
       }
 
       // Filter by status
-      const isGreen = item.percentual >= 98;
-      const isYellow = item.percentual >= 80 && item.percentual < 98;
-      const isRed = item.percentual < 80;
+      const isGreen = percentual >= 98;
+      const isYellow = percentual >= 80 && percentual < 98;
+      const isRed = percentual < 80;
 
       if (settings.ignore_green && isGreen) return false;
       if (settings.ignore_yellow && isYellow) return false;
@@ -50,11 +93,11 @@ export default function PresentationPage() {
 
       return true;
     });
-  }, [data, settings]);
+  }, [rawData, settings]);
 
   // Paginate data
   const pages = useMemo(() => {
-    const result: MonitoringData[][] = [];
+    const result: PresentationItem[][] = [];
     const perPage = settings.companies_per_page;
     
     for (let i = 0; i < filteredData.length; i += perPage) {
@@ -79,6 +122,11 @@ export default function PresentationPage() {
     maxCardWidth: 400,
     aspectRatio: 1.25,
   });
+
+  // Reset page index when tab changes
+  useEffect(() => {
+    setCurrentPageIndex(0);
+  }, [activeTab]);
 
   // Auto-advance carousel
   useEffect(() => {
@@ -174,9 +222,9 @@ export default function PresentationPage() {
             className="h-10 w-auto rounded-lg"
           />
           <div>
-            <h1 className="text-xl font-bold text-foreground">Monitoramento</h1>
+            <h1 className="text-xl font-bold text-foreground">{title}</h1>
             <p className="text-sm text-muted-foreground">
-              {filteredData.length} empresas monitoradas
+              {filteredData.length} {itemLabel} monitoradas
             </p>
           </div>
         </div>
@@ -215,7 +263,7 @@ export default function PresentationPage() {
       >
         <AnimatePresence mode="wait">
           <motion.div
-            key={currentPageIndex}
+            key={`${activeTab}-${currentPageIndex}`}
             initial={{ opacity: 0, scale: 0.98 }}
             animate={{ opacity: 1, scale: 1 }}
             exit={{ opacity: 0, scale: 1.02 }}
@@ -230,35 +278,64 @@ export default function PresentationPage() {
               gap: `${layout.gap}px`,
             }}
           >
-            {currentPage.map((item, index) => (
-              <motion.div
-                key={item.empresa}
-                className="w-full h-full"
-                initial={{ opacity: 0, y: 10 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ 
-                  duration: 0.4, 
-                  delay: index * 0.03,
-                  ease: 'easeOut' 
-                }}
-              >
-                <AdaptiveDonutChart
-                  empresa={item.empresa}
-                  percentage={item.percentual}
-                  totalBase={item.total_base}
-                  semMonitoramento={item.total_sem_monitoramento}
-                  dataGravacao={item.data_gravacao}
-                  scale={layout.scale}
-                />
-              </motion.div>
-            ))}
+            {currentPage.map((item, index) => {
+              if (isSLAData(item)) {
+                return (
+                  <motion.div
+                    key={item.id}
+                    className="w-full h-full"
+                    initial={{ opacity: 0, y: 10 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ 
+                      duration: 0.4, 
+                      delay: index * 0.03,
+                      ease: 'easeOut' 
+                    }}
+                  >
+                    <AdaptiveSLADonutChart
+                      nome={item.nome}
+                      percentage={item.percentual}
+                      dentro={item.dentro}
+                      fora={item.fora}
+                      total={item.total}
+                      createdAt={item.created_at}
+                      scale={layout.scale}
+                    />
+                  </motion.div>
+                );
+              }
+
+              const mpsItem = item as MonitoringData;
+              return (
+                <motion.div
+                  key={mpsItem.empresa}
+                  className="w-full h-full"
+                  initial={{ opacity: 0, y: 10 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ 
+                    duration: 0.4, 
+                    delay: index * 0.03,
+                    ease: 'easeOut' 
+                  }}
+                >
+                  <AdaptiveDonutChart
+                    empresa={mpsItem.empresa}
+                    percentage={mpsItem.percentual}
+                    totalBase={mpsItem.total_base}
+                    semMonitoramento={mpsItem.total_sem_monitoramento}
+                    dataGravacao={mpsItem.data_gravacao}
+                    scale={layout.scale}
+                  />
+                </motion.div>
+              );
+            })}
           </motion.div>
         </AnimatePresence>
 
         {filteredData.length === 0 && (
           <div className="flex items-center justify-center h-full">
             <p className="text-xl text-muted-foreground">
-              Nenhuma empresa para exibir com os filtros atuais
+              Nenhum item para exibir com os filtros atuais
             </p>
           </div>
         )}

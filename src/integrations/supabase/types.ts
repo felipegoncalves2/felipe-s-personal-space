@@ -136,6 +136,54 @@ export type Database = {
           },
         ]
       }
+      sla_fila_rn: {
+        Row: {
+          created_at: string
+          dentro: number
+          fora: number
+          id: number
+          nome_fila: string
+        }
+        Insert: {
+          created_at?: string
+          dentro?: number
+          fora?: number
+          id?: number
+          nome_fila: string
+        }
+        Update: {
+          created_at?: string
+          dentro?: number
+          fora?: number
+          id?: number
+          nome_fila?: string
+        }
+        Relationships: []
+      }
+      sla_projetos_rn: {
+        Row: {
+          created_at: string
+          dentro: number
+          fora: number
+          id: number
+          nome_projeto: string
+        }
+        Insert: {
+          created_at?: string
+          dentro?: number
+          fora?: number
+          id?: number
+          nome_projeto: string
+        }
+        Update: {
+          created_at?: string
+          dentro?: number
+          fora?: number
+          id?: number
+          nome_projeto?: string
+        }
+        Relationships: []
+      }
       users: {
         Row: {
           created_at: string | null
