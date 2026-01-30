@@ -1,0 +1,149 @@
+import { motion } from 'framer-motion';
+import { useMemo } from 'react';
+
+interface DonutChartProps {
+  percentage: number;
+  size?: number;
+  strokeWidth?: number;
+  empresa: string;
+  totalBase: number;
+  semMonitoramento: number;
+  dataGravacao: string;
+  delay?: number;
+}
+
+export function DonutChart({
+  percentage,
+  size = 140,
+  strokeWidth = 12,
+  empresa,
+  totalBase,
+  semMonitoramento,
+  dataGravacao,
+  delay = 0,
+}: DonutChartProps) {
+  const radius = (size - strokeWidth) / 2;
+  const circumference = 2 * Math.PI * radius;
+  const offset = circumference - (percentage / 100) * circumference;
+
+  const { color, bgColor, statusLabel } = useMemo(() => {
+    if (percentage >= 98) {
+      return {
+        color: 'hsl(var(--chart-green))',
+        bgColor: 'hsl(var(--chart-green) / 0.15)',
+        statusLabel: 'Excelente',
+      };
+    } else if (percentage >= 80) {
+      return {
+        color: 'hsl(var(--chart-yellow))',
+        bgColor: 'hsl(var(--chart-yellow) / 0.15)',
+        statusLabel: 'Atenção',
+      };
+    } else {
+      return {
+        color: 'hsl(var(--chart-red))',
+        bgColor: 'hsl(var(--chart-red) / 0.15)',
+        statusLabel: 'Crítico',
+      };
+    }
+  }, [percentage]);
+
+  const formattedDate = useMemo(() => {
+    const date = new Date(dataGravacao);
+    return date.toLocaleString('pt-BR', {
+      day: '2-digit',
+      month: '2-digit',
+      year: 'numeric',
+      hour: '2-digit',
+      minute: '2-digit',
+    });
+  }, [dataGravacao]);
+
+  return (
+    <motion.div
+      initial={{ opacity: 0, y: 20, scale: 0.9 }}
+      animate={{ opacity: 1, y: 0, scale: 1 }}
+      transition={{ delay, duration: 0.4, ease: 'easeOut' }}
+      whileHover={{ scale: 1.02 }}
+      className="glass rounded-xl p-5 transition-all hover:shadow-lg hover:shadow-primary/5"
+    >
+      <div className="flex flex-col items-center">
+        {/* Company Name */}
+        <h3 className="mb-4 text-center text-sm font-semibold text-foreground line-clamp-2 h-10">
+          {empresa}
+        </h3>
+
+        {/* Donut Chart */}
+        <div className="relative" style={{ width: size, height: size }}>
+          <svg
+            width={size}
+            height={size}
+            className="-rotate-90 transform"
+          >
+            {/* Background circle */}
+            <circle
+              cx={size / 2}
+              cy={size / 2}
+              r={radius}
+              fill="none"
+              stroke={bgColor}
+              strokeWidth={strokeWidth}
+            />
+            {/* Progress circle */}
+            <motion.circle
+              cx={size / 2}
+              cy={size / 2}
+              r={radius}
+              fill="none"
+              stroke={color}
+              strokeWidth={strokeWidth}
+              strokeLinecap="round"
+              strokeDasharray={circumference}
+              initial={{ strokeDashoffset: circumference }}
+              animate={{ strokeDashoffset: offset }}
+              transition={{ delay: delay + 0.2, duration: 1.5, ease: 'easeOut' }}
+            />
+          </svg>
+
+          {/* Center content */}
+          <div className="absolute inset-0 flex flex-col items-center justify-center">
+            <motion.span
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              transition={{ delay: delay + 0.5 }}
+              className="text-2xl font-bold"
+              style={{ color }}
+            >
+              {percentage.toFixed(1)}%
+            </motion.span>
+            <motion.span
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              transition={{ delay: delay + 0.6 }}
+              className="text-[10px] font-medium text-muted-foreground"
+            >
+              {statusLabel}
+            </motion.span>
+          </div>
+        </div>
+
+        {/* Stats */}
+        <div className="mt-4 w-full space-y-1 text-center">
+          <p className="text-xs text-muted-foreground">
+            Base total: <span className="font-medium text-foreground">{totalBase.toLocaleString('pt-BR')}</span>
+          </p>
+          <p className="text-xs text-muted-foreground">
+            Sem monitoramento: <span className="font-medium text-foreground">{semMonitoramento.toLocaleString('pt-BR')}</span>
+          </p>
+        </div>
+
+        {/* Date */}
+        <div className="mt-3 pt-3 border-t border-border w-full text-center">
+          <p className="text-[10px] text-muted-foreground">
+            Última aferição: <span className="font-medium">{formattedDate}</span>
+          </p>
+        </div>
+      </div>
+    </motion.div>
+  );
+}
