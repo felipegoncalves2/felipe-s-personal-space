@@ -1,5 +1,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import { MonitoringData } from '@/types';
+import { supabase } from '@/integrations/supabase/client';
+import { calculateTrend, TrendDirection } from '@/components/common/TrendIndicator';
 
 const SUPABASE_URL = 'https://qromvrzqktrfexbnaoem.supabase.co';
 const SESSION_KEY = 'techub_session';
@@ -37,7 +39,56 @@ export function useMonitoringData() {
       const result = await response.json();
 
       if (result.success) {
-        setData(result.data);
+        // Fetch previous data for trend calculation
+        const { data: rawData, error: dbError } = await supabase
+          .from('monitoramento_parque')
+          .select('*')
+          .order('data_gravacao', { ascending: false });
+
+        if (dbError) {
+          console.error('Error fetching trend data:', dbError);
+          setData(result.data.map((item: MonitoringData) => ({ ...item, trend: 'stable' as TrendDirection })));
+        } else {
+          // Group by empresa and get latest + previous
+          const recordsByEmpresa = new Map<string, Array<typeof rawData[0]>>();
+          
+          for (const record of rawData || []) {
+            if (!recordsByEmpresa.has(record.empresa)) {
+              recordsByEmpresa.set(record.empresa, []);
+            }
+            const records = recordsByEmpresa.get(record.empresa)!;
+            if (records.length < 2) {
+              records.push(record);
+            }
+          }
+
+          // Calculate trends for each empresa
+          const dataWithTrends: MonitoringData[] = result.data.map((item: MonitoringData) => {
+            const records = recordsByEmpresa.get(item.empresa);
+            let trend: TrendDirection = 'stable';
+            
+            if (records && records.length >= 2) {
+              const current = records[0];
+              const previous = records[1];
+              
+              const currentBase = parseInt(current.total_base) || 0;
+              const currentSem = parseInt(current.total_sem_monitoramento) || 0;
+              const currentMonitoradas = currentBase - currentSem;
+              const currentPercentual = currentBase > 0 ? (currentMonitoradas / currentBase) * 100 : 0;
+              
+              const prevBase = parseInt(previous.total_base) || 0;
+              const prevSem = parseInt(previous.total_sem_monitoramento) || 0;
+              const prevMonitoradas = prevBase - prevSem;
+              const prevPercentual = prevBase > 0 ? (prevMonitoradas / prevBase) * 100 : 0;
+              
+              trend = calculateTrend(currentPercentual, prevPercentual);
+            }
+            
+            return { ...item, trend };
+          });
+
+          setData(dataWithTrends);
+        }
         setLastUpdated(new Date());
       } else {
         setError(result.error || 'Erro ao carregar dados');

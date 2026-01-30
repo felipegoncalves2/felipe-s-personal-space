@@ -8,7 +8,7 @@ import { useMonitoringData } from '@/hooks/useMonitoringData';
 import { useSLAData } from '@/hooks/useSLAData';
 import { usePresentationSettings } from '@/hooks/usePresentationSettings';
 import { useAdaptiveLayout, useViewportSize } from '@/hooks/useAdaptiveLayout';
-import { MonitoringData, SLAData, MonitoringTabType } from '@/types';
+import { MonitoringData, SLAData, MonitoringTabType, tabToMonitoringType } from '@/types';
 import logoTechub from '@/assets/logo_techub.jpg';
 
 // Header and footer heights for layout calculation
@@ -27,11 +27,16 @@ export default function PresentationPage() {
   const [searchParams] = useSearchParams();
   const tabParam = searchParams.get('tab') as MonitoringTabType | null;
   const activeTab: MonitoringTabType = tabParam || 'mps';
+  
+  // Get the monitoring type key for settings
+  const monitoringType = tabToMonitoringType(activeTab);
 
   const { data: mpsData, isLoading: mpsLoading } = useMonitoringData();
   const { data: slaFilaData, isLoading: slaFilaLoading } = useSLAData('fila');
   const { data: slaProjetosData, isLoading: slaProjetosLoading } = useSLAData('projetos');
-  const { settings } = usePresentationSettings();
+  
+  // Use settings specific to the current monitoring type
+  const { settings } = usePresentationSettings(monitoringType);
   const viewport = useViewportSize();
   
   const [currentPageIndex, setCurrentPageIndex] = useState(0);
@@ -300,6 +305,7 @@ export default function PresentationPage() {
                       total={item.total}
                       createdAt={item.created_at}
                       scale={layout.scale}
+                      trend={item.trend}
                     />
                   </motion.div>
                 );
@@ -325,6 +331,7 @@ export default function PresentationPage() {
                     semMonitoramento={mpsItem.total_sem_monitoramento}
                     dataGravacao={mpsItem.data_gravacao}
                     scale={layout.scale}
+                    trend={mpsItem.trend}
                   />
                 </motion.div>
               );

@@ -4,6 +4,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Switch } from '@/components/ui/switch';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import {
   Select,
   SelectContent,
@@ -12,12 +13,24 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import { usePresentationSettings } from '@/hooks/usePresentationSettings';
+import { MonitoringTypeKey } from '@/types';
 import { toast } from 'sonner';
 
 const COMPANIES_PER_PAGE_OPTIONS = [4, 5, 10, 20, 30];
 
-export function PresentationSettings() {
-  const { settings, isLoading, updateSettings } = usePresentationSettings();
+interface TabConfig {
+  key: MonitoringTypeKey;
+  label: string;
+}
+
+const TABS: TabConfig[] = [
+  { key: 'mps', label: 'MPS' },
+  { key: 'sla_fila', label: 'SLA Fila RN' },
+  { key: 'sla_projetos', label: 'SLA Projetos RN' },
+];
+
+function PresentationSettingsForm({ monitoringType }: { monitoringType: MonitoringTypeKey }) {
+  const { settings, isLoading, updateSettings } = usePresentationSettings(monitoringType);
   const [isSaving, setIsSaving] = useState(false);
 
   const [companiesPerPage, setCompaniesPerPage] = useState(4);
@@ -72,17 +85,7 @@ export function PresentationSettings() {
   }
 
   return (
-    <div className="space-y-8">
-      <div className="flex items-center gap-3">
-        <Monitor className="h-6 w-6 text-primary" />
-        <div>
-          <h3 className="text-lg font-semibold">Configurações da Apresentação</h3>
-          <p className="text-sm text-muted-foreground">
-            Configure o modo de apresentação para exibição em TVs e salas de monitoramento
-          </p>
-        </div>
-      </div>
-
+    <div className="space-y-6">
       {/* Layout Section */}
       <div className="space-y-4">
         <h4 className="font-medium text-foreground border-b border-border pb-2">
@@ -91,18 +94,18 @@ export function PresentationSettings() {
         
         <div className="grid gap-4 md:grid-cols-2">
           <div className="space-y-2">
-            <Label htmlFor="companies-per-page">Empresas por tela</Label>
+            <Label htmlFor={`companies-per-page-${monitoringType}`}>Empresas por tela</Label>
             <Select
               value={companiesPerPage.toString()}
               onValueChange={(value) => setCompaniesPerPage(parseInt(value))}
             >
-              <SelectTrigger id="companies-per-page">
+              <SelectTrigger id={`companies-per-page-${monitoringType}`}>
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
                 {COMPANIES_PER_PAGE_OPTIONS.map((n) => (
                   <SelectItem key={n} value={n.toString()}>
-                    {n} empresas
+                    {n} itens
                   </SelectItem>
                 ))}
               </SelectContent>
@@ -119,9 +122,9 @@ export function PresentationSettings() {
         
         <div className="grid gap-4 md:grid-cols-2">
           <div className="space-y-2">
-            <Label htmlFor="interval-seconds">Intervalo entre páginas (segundos)</Label>
+            <Label htmlFor={`interval-seconds-${monitoringType}`}>Intervalo entre páginas (segundos)</Label>
             <Input
-              id="interval-seconds"
+              id={`interval-seconds-${monitoringType}`}
               type="number"
               min={3}
               max={120}
@@ -142,9 +145,9 @@ export function PresentationSettings() {
         
         <div className="grid gap-4 md:grid-cols-2">
           <div className="space-y-2">
-            <Label htmlFor="min-percentage">Ignorar empresas com % abaixo de</Label>
+            <Label htmlFor={`min-percentage-${monitoringType}`}>Ignorar itens com % abaixo de</Label>
             <Input
-              id="min-percentage"
+              id={`min-percentage-${monitoringType}`}
               type="number"
               min={0}
               max={100}
@@ -157,9 +160,9 @@ export function PresentationSettings() {
           </div>
 
           <div className="space-y-2">
-            <Label htmlFor="max-percentage">Ignorar empresas com % acima de</Label>
+            <Label htmlFor={`max-percentage-${monitoringType}`}>Ignorar itens com % acima de</Label>
             <Input
-              id="max-percentage"
+              id={`max-percentage-${monitoringType}`}
               type="number"
               min={0}
               max={100}
@@ -178,33 +181,33 @@ export function PresentationSettings() {
           <div className="flex flex-wrap gap-6">
             <div className="flex items-center gap-3">
               <Switch
-                id="ignore-green"
+                id={`ignore-green-${monitoringType}`}
                 checked={ignoreGreen}
                 onCheckedChange={setIgnoreGreen}
               />
-              <Label htmlFor="ignore-green" className="cursor-pointer">
+              <Label htmlFor={`ignore-green-${monitoringType}`} className="cursor-pointer">
                 🟢 Verde (≥98%)
               </Label>
             </div>
 
             <div className="flex items-center gap-3">
               <Switch
-                id="ignore-yellow"
+                id={`ignore-yellow-${monitoringType}`}
                 checked={ignoreYellow}
                 onCheckedChange={setIgnoreYellow}
               />
-              <Label htmlFor="ignore-yellow" className="cursor-pointer">
+              <Label htmlFor={`ignore-yellow-${monitoringType}`} className="cursor-pointer">
                 🟡 Amarelo (80-97.9%)
               </Label>
             </div>
 
             <div className="flex items-center gap-3">
               <Switch
-                id="ignore-red"
+                id={`ignore-red-${monitoringType}`}
                 checked={ignoreRed}
                 onCheckedChange={setIgnoreRed}
               />
-              <Label htmlFor="ignore-red" className="cursor-pointer">
+              <Label htmlFor={`ignore-red-${monitoringType}`} className="cursor-pointer">
                 🔴 Vermelho (&lt;80%)
               </Label>
             </div>
@@ -223,6 +226,40 @@ export function PresentationSettings() {
           Salvar Configurações
         </Button>
       </div>
+    </div>
+  );
+}
+
+export function PresentationSettings() {
+  const [activeTab, setActiveTab] = useState<MonitoringTypeKey>('mps');
+
+  return (
+    <div className="space-y-8">
+      <div className="flex items-center gap-3">
+        <Monitor className="h-6 w-6 text-primary" />
+        <div>
+          <h3 className="text-lg font-semibold">Configurações da Apresentação</h3>
+          <p className="text-sm text-muted-foreground">
+            Configure o modo de apresentação para cada tipo de monitoramento
+          </p>
+        </div>
+      </div>
+
+      <Tabs value={activeTab} onValueChange={(v) => setActiveTab(v as MonitoringTypeKey)} className="space-y-6">
+        <TabsList className="glass">
+          {TABS.map((tab) => (
+            <TabsTrigger key={tab.key} value={tab.key}>
+              {tab.label}
+            </TabsTrigger>
+          ))}
+        </TabsList>
+
+        {TABS.map((tab) => (
+          <TabsContent key={tab.key} value={tab.key} className="m-0">
+            <PresentationSettingsForm monitoringType={tab.key} />
+          </TabsContent>
+        ))}
+      </Tabs>
     </div>
   );
 }

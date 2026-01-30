@@ -1,5 +1,6 @@
 import { motion } from 'framer-motion';
 import { useMemo } from 'react';
+import { TrendIndicator, TrendDirection } from '@/components/common/TrendIndicator';
 
 interface AdaptiveSLADonutChartProps {
   nome: string;
@@ -9,6 +10,7 @@ interface AdaptiveSLADonutChartProps {
   total: number;
   createdAt: string;
   scale: number;
+  trend?: TrendDirection;
 }
 
 export function AdaptiveSLADonutChart({
@@ -19,6 +21,7 @@ export function AdaptiveSLADonutChart({
   total,
   createdAt,
   scale,
+  trend = 'stable',
 }: AdaptiveSLADonutChartProps) {
   // Base sizes that will be scaled
   const baseSize = 140;
@@ -71,18 +74,26 @@ export function AdaptiveSLADonutChart({
     });
   }, [createdAt]);
 
+  // Trend icon size
+  const trendSize = Math.max(10, Math.round(14 * scale));
+
   return (
     <motion.div
       initial={{ opacity: 0, scale: 0.95 }}
       animate={{ opacity: 1, scale: 1 }}
       transition={{ duration: 0.4, ease: 'easeOut' }}
-      className="glass rounded-xl h-full w-full flex flex-col items-center justify-center"
+      className="glass rounded-xl h-full w-full flex flex-col items-center justify-center relative"
       style={{ padding }}
     >
+      {/* Trend Indicator */}
+      <div className="absolute" style={{ top: padding * 0.5, right: padding * 0.5 }}>
+        <TrendIndicator trend={trend} size={trendSize} />
+      </div>
+
       {/* Name */}
       <h3 
         className="text-center font-semibold text-foreground line-clamp-2 mb-2"
-        style={{ fontSize: Math.max(11, fontSize * 0.5) }}
+        style={{ fontSize: Math.max(11, fontSize * 0.5), paddingRight: `${trendSize + 4}px` }}
       >
         {nome}
       </h3>

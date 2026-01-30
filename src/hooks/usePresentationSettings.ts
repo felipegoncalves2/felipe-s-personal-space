@@ -1,8 +1,9 @@
 import { useState, useEffect, useCallback } from 'react';
 import { supabase } from '@/integrations/supabase/client';
-import { PresentationSettings } from '@/types';
+import { PresentationSettings, MonitoringTypeKey } from '@/types';
 
 const DEFAULT_SETTINGS: Omit<PresentationSettings, 'id' | 'created_at' | 'updated_at'> = {
+  monitoring_type: 'mps',
   companies_per_page: 4,
   interval_seconds: 10,
   min_percentage: null,
@@ -12,7 +13,7 @@ const DEFAULT_SETTINGS: Omit<PresentationSettings, 'id' | 'created_at' | 'update
   ignore_red: false,
 };
 
-export function usePresentationSettings() {
+export function usePresentationSettings(monitoringType: MonitoringTypeKey = 'mps') {
   const [settings, setSettings] = useState<PresentationSettings | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -25,6 +26,7 @@ export function usePresentationSettings() {
       const { data, error: fetchError } = await supabase
         .from('presentation_settings')
         .select('*')
+        .eq('monitoring_type', monitoringType)
         .limit(1)
         .single();
 
@@ -41,7 +43,7 @@ export function usePresentationSettings() {
     } finally {
       setIsLoading(false);
     }
-  }, []);
+  }, [monitoringType]);
 
   const updateSettings = useCallback(async (updates: Partial<PresentationSettings>) => {
     if (!settings?.id) return { success: false, error: 'Configurações não encontradas' };
@@ -70,7 +72,7 @@ export function usePresentationSettings() {
   }, [fetchSettings]);
 
   return {
-    settings: settings || DEFAULT_SETTINGS as PresentationSettings,
+    settings: settings || { ...DEFAULT_SETTINGS, monitoring_type: monitoringType } as PresentationSettings,
     isLoading,
     error,
     refetch: fetchSettings,

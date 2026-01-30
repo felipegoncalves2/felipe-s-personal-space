@@ -1,5 +1,6 @@
 import { motion } from 'framer-motion';
 import { useMemo } from 'react';
+import { TrendIndicator, TrendDirection } from '@/components/common/TrendIndicator';
 
 interface AdaptiveDonutChartProps {
   percentage: number;
@@ -8,6 +9,7 @@ interface AdaptiveDonutChartProps {
   semMonitoramento: number;
   dataGravacao: string;
   scale: number; // 0-1 scale factor based on viewport and density
+  trend?: TrendDirection;
 }
 
 export function AdaptiveDonutChart({
@@ -17,6 +19,7 @@ export function AdaptiveDonutChart({
   semMonitoramento,
   dataGravacao,
   scale,
+  trend = 'stable',
 }: AdaptiveDonutChartProps) {
   // Calculate sizes based on scale
   const donutSize = Math.max(60, Math.round(200 * scale));
@@ -73,14 +76,22 @@ export function AdaptiveDonutChart({
   const showStats = scale >= 0.35;
   const showDate = scale >= 0.4;
 
+  // Trend icon size
+  const trendSize = Math.max(10, Math.round(18 * scale));
+
   return (
     <motion.div
       initial={{ opacity: 0, scale: 0.95 }}
       animate={{ opacity: 1, scale: 1 }}
       transition={{ duration: 0.5, ease: 'easeOut' }}
-      className="glass rounded-xl h-full w-full flex flex-col items-center justify-center overflow-hidden"
+      className="glass rounded-xl h-full w-full flex flex-col items-center justify-center overflow-hidden relative"
       style={{ padding: `${padding}px` }}
     >
+      {/* Trend Indicator */}
+      <div className="absolute" style={{ top: padding * 0.5, right: padding * 0.5 }}>
+        <TrendIndicator trend={trend} size={trendSize} />
+      </div>
+
       {/* Company Name */}
       <h3
         className="text-center font-semibold text-foreground line-clamp-2 mb-2"
@@ -88,6 +99,7 @@ export function AdaptiveDonutChart({
           fontSize: `${titleSize}px`,
           lineHeight: 1.2,
           maxHeight: `${titleSize * 2.4}px`,
+          paddingRight: `${trendSize + 4}px`,
         }}
       >
         {empresa}

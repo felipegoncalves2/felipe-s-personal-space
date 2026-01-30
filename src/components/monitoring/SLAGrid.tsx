@@ -248,6 +248,7 @@ export function SLAGrid({ type }: SLAGridProps) {
               total={item.total}
               createdAt={item.created_at}
               delay={index * 0.05}
+              trend={item.trend}
             />
           ))}
         </div>
