@@ -13,6 +13,7 @@ interface SLADonutChartProps {
   createdAt: string;
   delay?: number;
   trend?: TrendDirection;
+  onClick?: () => void;
 }
 
 export function SLADonutChart({
@@ -26,6 +27,7 @@ export function SLADonutChart({
   createdAt,
   delay = 0,
   trend = 'stable',
+  onClick,
 }: SLADonutChartProps) {
   const radius = (size - strokeWidth) / 2;
   const circumference = 2 * Math.PI * radius;
@@ -70,7 +72,8 @@ export function SLADonutChart({
       animate={{ opacity: 1, y: 0, scale: 1 }}
       transition={{ delay, duration: 0.4, ease: 'easeOut' }}
       whileHover={{ scale: 1.02 }}
-      className="glass rounded-xl p-5 transition-all hover:shadow-lg hover:shadow-primary/5 relative"
+      onClick={onClick}
+      className={`glass rounded-xl p-5 transition-all hover:shadow-lg hover:shadow-primary/5 relative ${onClick ? 'cursor-pointer hover:bg-white/5' : ''}`}
     >
       {/* Trend Indicator */}
       <div className="absolute top-3 right-3">

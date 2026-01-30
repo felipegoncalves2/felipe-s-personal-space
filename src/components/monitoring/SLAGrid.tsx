@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { Search, RefreshCw, Filter, ArrowUpDown, Loader2, Play } from 'lucide-react';
 import { SLADonutChart } from './SLADonutChart';
+import { HistoryModal } from './HistoryModal';
 import { useSLAData } from '@/hooks/useSLAData';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
@@ -32,6 +33,7 @@ export function SLAGrid({ type }: SLAGridProps) {
   const [statusFilter, setStatusFilter] = useState<StatusFilter>('all');
   const [itemsPerPage, setItemsPerPage] = useState(10);
   const [currentPage, setCurrentPage] = useState(1);
+  const [selectedItem, setSelectedItem] = useState<{ nome: string } | null>(null);
 
   const filteredAndSortedData = useMemo(() => {
     let result = [...data];
@@ -249,9 +251,20 @@ export function SLAGrid({ type }: SLAGridProps) {
               createdAt={item.created_at}
               delay={index * 0.05}
               trend={item.trend}
+              onClick={() => setSelectedItem({ nome: item.nome })}
             />
           ))}
         </div>
+      )}
+
+      {selectedItem && (
+        <HistoryModal
+          isOpen={!!selectedItem}
+          onClose={() => setSelectedItem(null)}
+          type={type === 'fila' ? 'sla_fila' : 'sla_projetos'}
+          identifier={selectedItem.nome}
+          title={`Histórico de SLA - ${type === 'fila' ? 'Fila RN' : 'Projetos RN'}`}
+        />
       )}
 
       {/* Pagination */}
@@ -265,7 +278,7 @@ export function SLAGrid({ type }: SLAGridProps) {
           >
             Anterior
           </Button>
-          
+
           <div className="flex gap-1">
             {Array.from({ length: Math.min(totalPages, 5) }, (_, i) => {
               let pageNum;
@@ -278,7 +291,7 @@ export function SLAGrid({ type }: SLAGridProps) {
               } else {
                 pageNum = currentPage - 2 + i;
               }
-              
+
               return (
                 <Button
                   key={pageNum}

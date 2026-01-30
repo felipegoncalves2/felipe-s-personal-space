@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { Search, RefreshCw, Filter, ArrowUpDown, Loader2, Play } from 'lucide-react';
 import { DonutChart } from './DonutChart';
+import { HistoryModal } from './HistoryModal';
 import { useMonitoringData } from '@/hooks/useMonitoringData';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
@@ -27,6 +28,7 @@ export function MonitoringGrid() {
   const [statusFilter, setStatusFilter] = useState<StatusFilter>('all');
   const [itemsPerPage, setItemsPerPage] = useState(10);
   const [currentPage, setCurrentPage] = useState(1);
+  const [selectedItem, setSelectedItem] = useState<{ empresa: string } | null>(null);
 
   const filteredAndSortedData = useMemo(() => {
     let result = [...data];
@@ -240,9 +242,20 @@ export function MonitoringGrid() {
               dataGravacao={item.data_gravacao}
               delay={index * 0.05}
               trend={item.trend}
+              onClick={() => setSelectedItem({ empresa: item.empresa })}
             />
           ))}
         </div>
+      )}
+
+      {selectedItem && (
+        <HistoryModal
+          isOpen={!!selectedItem}
+          onClose={() => setSelectedItem(null)}
+          type="mps"
+          identifier={selectedItem.empresa}
+          title="Histórico de Monitoramento - MPS"
+        />
       )}
 
       {/* Pagination */}
@@ -256,7 +269,7 @@ export function MonitoringGrid() {
           >
             Anterior
           </Button>
-          
+
           <div className="flex gap-1">
             {Array.from({ length: Math.min(totalPages, 5) }, (_, i) => {
               let pageNum;
@@ -269,7 +282,7 @@ export function MonitoringGrid() {
               } else {
                 pageNum = currentPage - 2 + i;
               }
-              
+
               return (
                 <Button
                   key={pageNum}
