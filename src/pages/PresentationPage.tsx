@@ -2,16 +2,23 @@ import { useState, useEffect, useCallback, useMemo, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { LogOut, Maximize, Minimize } from 'lucide-react';
-import { DonutChart } from '@/components/monitoring/DonutChart';
+import { AdaptiveDonutChart } from '@/components/presentation/AdaptiveDonutChart';
 import { useMonitoringData } from '@/hooks/useMonitoringData';
 import { usePresentationSettings } from '@/hooks/usePresentationSettings';
+import { useAdaptiveLayout, useViewportSize } from '@/hooks/useAdaptiveLayout';
 import { MonitoringData } from '@/types';
 import logoTechub from '@/assets/logo_techub.jpg';
+
+// Header and footer heights for layout calculation
+const HEADER_HEIGHT = 72;
+const FOOTER_HEIGHT = 40;
+const CONTENT_PADDING = 24;
 
 export default function PresentationPage() {
   const navigate = useNavigate();
   const { data, isLoading } = useMonitoringData();
   const { settings } = usePresentationSettings();
+  const viewport = useViewportSize();
   
   const [currentPageIndex, setCurrentPageIndex] = useState(0);
   const [showControls, setShowControls] = useState(false);
@@ -58,6 +65,20 @@ export default function PresentationPage() {
   }, [filteredData, settings.companies_per_page]);
 
   const currentPage = pages[currentPageIndex] || [];
+
+  // Calculate available space for the grid
+  const contentHeight = viewport.height - HEADER_HEIGHT - FOOTER_HEIGHT - CONTENT_PADDING * 2;
+  const contentWidth = viewport.width - CONTENT_PADDING * 2;
+
+  // Use adaptive layout hook
+  const layout = useAdaptiveLayout({
+    itemCount: currentPage.length || settings.companies_per_page,
+    containerWidth: contentWidth,
+    containerHeight: contentHeight,
+    minCardWidth: 120,
+    maxCardWidth: 400,
+    aspectRatio: 1.25,
+  });
 
   // Auto-advance carousel
   useEffect(() => {
@@ -126,16 +147,6 @@ export default function PresentationPage() {
     navigate('/');
   }, [exitFullscreen, navigate]);
 
-  // Get grid columns based on companies per page
-  const getGridCols = () => {
-    const count = settings.companies_per_page;
-    if (count <= 4) return 'grid-cols-2';
-    if (count <= 6) return 'grid-cols-3';
-    if (count <= 10) return 'grid-cols-5 lg:grid-cols-5';
-    if (count <= 20) return 'grid-cols-4 lg:grid-cols-5';
-    return 'grid-cols-5 lg:grid-cols-6';
-  };
-
   if (isLoading) {
     return (
       <div className="min-h-screen bg-background flex items-center justify-center">
@@ -147,12 +158,15 @@ export default function PresentationPage() {
   return (
     <div
       ref={containerRef}
-      className="min-h-screen bg-background flex flex-col cursor-none"
+      className="min-h-screen h-screen bg-background flex flex-col cursor-none overflow-hidden"
       onMouseMove={handleMouseMove}
       onTouchStart={handleMouseMove}
     >
       {/* Header with logo and page indicator */}
-      <div className="flex items-center justify-between px-6 py-4">
+      <div 
+        className="flex items-center justify-between px-6 flex-shrink-0"
+        style={{ height: HEADER_HEIGHT }}
+      >
         <div className="flex items-center gap-4">
           <img
             src={logoTechub}
@@ -194,8 +208,11 @@ export default function PresentationPage() {
         </div>
       </div>
 
-      {/* Main content with carousel */}
-      <div className="flex-1 px-6 pb-6">
+      {/* Main content with adaptive grid */}
+      <div 
+        className="flex-1 flex items-center justify-center overflow-hidden"
+        style={{ padding: CONTENT_PADDING }}
+      >
         <AnimatePresence mode="wait">
           <motion.div
             key={currentPageIndex}
@@ -206,24 +223,32 @@ export default function PresentationPage() {
               duration: 0.8,
               ease: [0.4, 0, 0.2, 1],
             }}
-            className={`grid ${getGridCols()} gap-4 h-full`}
+            className="grid place-items-center"
+            style={{
+              gridTemplateColumns: `repeat(${layout.columns}, ${layout.cardWidth}px)`,
+              gridTemplateRows: `repeat(${layout.rows}, ${layout.cardHeight}px)`,
+              gap: `${layout.gap}px`,
+            }}
           >
-            {currentPage.map((item) => (
+            {currentPage.map((item, index) => (
               <motion.div
                 key={item.empresa}
-                className="flex items-center justify-center"
-                initial={{ opacity: 0, y: 20 }}
+                className="w-full h-full"
+                initial={{ opacity: 0, y: 10 }}
                 animate={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.5 }}
+                transition={{ 
+                  duration: 0.4, 
+                  delay: index * 0.03,
+                  ease: 'easeOut' 
+                }}
               >
-                <DonutChart
+                <AdaptiveDonutChart
                   empresa={item.empresa}
-                  size={settings.companies_per_page <= 5 ? 180 : settings.companies_per_page <= 10 ? 140 : 120}
                   percentage={item.percentual}
                   totalBase={item.total_base}
                   semMonitoramento={item.total_sem_monitoramento}
                   dataGravacao={item.data_gravacao}
-                  delay={0}
+                  scale={layout.scale}
                 />
               </motion.div>
             ))}
@@ -247,7 +272,7 @@ export default function PresentationPage() {
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
             transition={{ duration: 0.3 }}
-            className="fixed top-4 right-4 flex items-center gap-2"
+            className="fixed top-4 right-4 flex items-center gap-2 z-50"
           >
             <button
               onClick={() => (isFullscreen ? exitFullscreen() : enterFullscreen())}
@@ -273,7 +298,10 @@ export default function PresentationPage() {
       </AnimatePresence>
 
       {/* Footer with branding */}
-      <div className="px-6 py-3 flex items-center justify-between text-xs text-muted-foreground">
+      <div 
+        className="px-6 flex items-center justify-between text-xs text-muted-foreground flex-shrink-0"
+        style={{ height: FOOTER_HEIGHT }}
+      >
         <span>TECHUB Monitor · 2026</span>
         <span>
           Página {currentPageIndex + 1} de {pages.length}
