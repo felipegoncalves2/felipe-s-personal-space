@@ -1,15 +1,15 @@
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.93.3";
+import * as bcrypt from "https://deno.land/x/bcrypt@v0.4.1/mod.ts";
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type, x-supabase-client-platform, x-supabase-client-platform-version, x-supabase-client-runtime, x-supabase-client-runtime-version',
 };
 
-// Bcrypt comparison using Deno library
+// Bcrypt comparison - using compareSync to avoid Worker issues in Edge Runtime
 async function verifyPassword(password: string, hash: string): Promise<boolean> {
   try {
-    const bcrypt = await import("https://deno.land/x/bcrypt@v0.4.1/mod.ts");
-    return await bcrypt.compare(password, hash);
+    return bcrypt.compareSync(password, hash);
   } catch (error) {
     console.error("Bcrypt error:", error);
     return false;
