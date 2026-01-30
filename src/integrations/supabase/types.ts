@@ -38,6 +38,45 @@ export type Database = {
         }
         Relationships: []
       }
+      presentation_settings: {
+        Row: {
+          companies_per_page: number
+          created_at: string
+          id: string
+          ignore_green: boolean
+          ignore_red: boolean
+          ignore_yellow: boolean
+          interval_seconds: number
+          max_percentage: number | null
+          min_percentage: number | null
+          updated_at: string
+        }
+        Insert: {
+          companies_per_page?: number
+          created_at?: string
+          id?: string
+          ignore_green?: boolean
+          ignore_red?: boolean
+          ignore_yellow?: boolean
+          interval_seconds?: number
+          max_percentage?: number | null
+          min_percentage?: number | null
+          updated_at?: string
+        }
+        Update: {
+          companies_per_page?: number
+          created_at?: string
+          id?: string
+          ignore_green?: boolean
+          ignore_red?: boolean
+          ignore_yellow?: boolean
+          interval_seconds?: number
+          max_percentage?: number | null
+          min_percentage?: number | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
       roles: {
         Row: {
           description: string | null
