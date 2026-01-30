@@ -40,6 +40,16 @@ export interface MonitoringData {
   percentual: number;
 }
 
+export interface SLAData {
+  id: number;
+  nome: string;
+  dentro: number;
+  fora: number;
+  total: number;
+  percentual: number;
+  created_at: string;
+}
+
 export interface UserListItem {
   id: number;
   full_name: string;
@@ -71,3 +81,5 @@ export interface PresentationSettings {
   created_at: string;
   updated_at: string;
 }
+
+export type MonitoringTabType = 'mps' | 'sla-fila' | 'sla-projetos';

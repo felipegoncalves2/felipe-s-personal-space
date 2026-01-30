@@ -2,8 +2,8 @@ import { useState, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { Search, RefreshCw, Filter, ArrowUpDown, Loader2, Play } from 'lucide-react';
-import { DonutChart } from './DonutChart';
-import { useMonitoringData } from '@/hooks/useMonitoringData';
+import { SLADonutChart } from './SLADonutChart';
+import { useSLAData } from '@/hooks/useSLAData';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import {
@@ -16,12 +16,17 @@ import {
 
 type SortOrder = 'asc' | 'desc';
 type StatusFilter = 'all' | 'green' | 'yellow' | 'red';
+type SLAType = 'fila' | 'projetos';
 
 const ITEMS_PER_PAGE_OPTIONS = [3, 5, 10, 20, 30];
 
-export function MonitoringGrid() {
+interface SLAGridProps {
+  type: SLAType;
+}
+
+export function SLAGrid({ type }: SLAGridProps) {
   const navigate = useNavigate();
-  const { data, isLoading, error, lastUpdated, refetch } = useMonitoringData();
+  const { data, isLoading, error, lastUpdated, refetch } = useSLAData(type);
   const [searchTerm, setSearchTerm] = useState('');
   const [sortOrder, setSortOrder] = useState<SortOrder>('desc');
   const [statusFilter, setStatusFilter] = useState<StatusFilter>('all');
@@ -35,7 +40,7 @@ export function MonitoringGrid() {
     if (searchTerm) {
       const search = searchTerm.toLowerCase();
       result = result.filter((item) =>
-        item.empresa.toLowerCase().includes(search)
+        item.nome.toLowerCase().includes(search)
       );
     }
 
@@ -76,6 +81,9 @@ export function MonitoringGrid() {
       red: data.filter((d) => d.percentual < 80).length,
     };
   }, [data]);
+
+  const typeLabel = type === 'fila' ? 'Fila' : 'Projeto';
+  const searchPlaceholder = type === 'fila' ? 'Buscar fila...' : 'Buscar projeto...';
 
   if (error) {
     return (
@@ -128,7 +136,7 @@ export function MonitoringGrid() {
           <div className="relative flex-1 min-w-[200px] max-w-xs">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
             <Input
-              placeholder="Buscar empresa..."
+              placeholder={searchPlaceholder}
               value={searchTerm}
               onChange={(e) => {
                 setSearchTerm(e.target.value);
@@ -210,7 +218,7 @@ export function MonitoringGrid() {
           <Button
             variant="default"
             size="sm"
-            onClick={() => navigate('/apresentacao?tab=mps')}
+            onClick={() => navigate(`/apresentacao?tab=${type === 'fila' ? 'sla-fila' : 'sla-projetos'}`)}
             className="bg-primary hover:bg-primary/90"
           >
             <Play className="mr-2 h-4 w-4" />
@@ -226,18 +234,19 @@ export function MonitoringGrid() {
         </div>
       ) : paginatedData.length === 0 ? (
         <div className="flex flex-col items-center justify-center py-12 text-muted-foreground">
-          <p>Nenhuma empresa encontrada</p>
+          <p>Nenhum {typeLabel.toLowerCase()} encontrado</p>
         </div>
       ) : (
         <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4">
           {paginatedData.map((item, index) => (
-            <DonutChart
-              key={item.empresa}
-              empresa={item.empresa}
+            <SLADonutChart
+              key={item.id}
+              nome={item.nome}
               percentage={item.percentual}
-              totalBase={item.total_base}
-              semMonitoramento={item.total_sem_monitoramento}
-              dataGravacao={item.data_gravacao}
+              dentro={item.dentro}
+              fora={item.fora}
+              total={item.total}
+              createdAt={item.created_at}
               delay={index * 0.05}
             />
           ))}
@@ -296,7 +305,7 @@ export function MonitoringGrid() {
 
       {/* Info */}
       <div className="text-center text-xs text-muted-foreground">
-        Mostrando {paginatedData.length} de {filteredAndSortedData.length} empresas
+        Mostrando {paginatedData.length} de {filteredAndSortedData.length} {type === 'fila' ? 'filas' : 'projetos'}
         {filteredAndSortedData.length !== data.length && ` (${data.length} total)`}
       </div>
     </div>

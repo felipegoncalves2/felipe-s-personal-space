@@ -1,17 +1,19 @@
 import { useState } from 'react';
-import { motion } from 'framer-motion';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { DashboardLayout } from '@/components/layout/DashboardLayout';
 import { MonitoringGrid } from '@/components/monitoring/MonitoringGrid';
+import { SLAGrid } from '@/components/monitoring/SLAGrid';
 import { EmailSettings } from '@/components/settings/EmailSettings';
 import { SupabaseSettings } from '@/components/settings/SupabaseSettings';
 import { UsersTable } from '@/components/settings/UsersTable';
 import { PresentationSettings } from '@/components/settings/PresentationSettings';
 import { useAuth } from '@/contexts/AuthContext';
+import { MonitoringTabType } from '@/types';
 
 export default function DashboardPage() {
   const { isAdmin } = useAuth();
   const [activeTab, setActiveTab] = useState<'monitoring' | 'settings'>('monitoring');
+  const [monitoringTab, setMonitoringTab] = useState<MonitoringTabType>('mps');
 
   return (
     <DashboardLayout activeTab={activeTab} onTabChange={setActiveTab}>
@@ -20,10 +22,30 @@ export default function DashboardPage() {
           <div>
             <h2 className="text-2xl font-bold text-foreground">Monitoramento</h2>
             <p className="text-muted-foreground">
-              Acompanhe o status de monitoramento das empresas em tempo real
+              Acompanhe o status de monitoramento em tempo real
             </p>
           </div>
-          <MonitoringGrid />
+
+          {/* Monitoring sub-tabs */}
+          <Tabs value={monitoringTab} onValueChange={(v) => setMonitoringTab(v as MonitoringTabType)}>
+            <TabsList className="glass">
+              <TabsTrigger value="mps">MPS</TabsTrigger>
+              <TabsTrigger value="sla-fila">SLA Fila RN</TabsTrigger>
+              <TabsTrigger value="sla-projetos">SLA Projetos RN</TabsTrigger>
+            </TabsList>
+
+            <TabsContent value="mps" className="mt-6">
+              <MonitoringGrid />
+            </TabsContent>
+
+            <TabsContent value="sla-fila" className="mt-6">
+              <SLAGrid type="fila" />
+            </TabsContent>
+
+            <TabsContent value="sla-projetos" className="mt-6">
+              <SLAGrid type="projetos" />
+            </TabsContent>
+          </Tabs>
         </div>
       )}
 
@@ -44,11 +66,7 @@ export default function DashboardPage() {
               <TabsTrigger value="presentation">Apresentação</TabsTrigger>
             </TabsList>
 
-            <motion.div
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              className="glass rounded-lg p-6"
-            >
+            <div className="glass rounded-lg p-6">
               <TabsContent value="email" className="m-0">
                 <EmailSettings />
               </TabsContent>
@@ -64,7 +82,7 @@ export default function DashboardPage() {
               <TabsContent value="presentation" className="m-0">
                 <PresentationSettings />
               </TabsContent>
-            </motion.div>
+            </div>
           </Tabs>
         </div>
       )}
