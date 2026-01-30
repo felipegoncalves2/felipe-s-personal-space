@@ -239,6 +239,7 @@ export function MonitoringGrid() {
               semMonitoramento={item.total_sem_monitoramento}
               dataGravacao={item.data_gravacao}
               delay={index * 0.05}
+              trend={item.trend}
             />
           ))}
         </div>

@@ -1,5 +1,6 @@
 import { motion } from 'framer-motion';
 import { useMemo } from 'react';
+import { TrendIndicator, TrendDirection } from '@/components/common/TrendIndicator';
 
 interface SLADonutChartProps {
   percentage: number;
@@ -11,6 +12,7 @@ interface SLADonutChartProps {
   total: number;
   createdAt: string;
   delay?: number;
+  trend?: TrendDirection;
 }
 
 export function SLADonutChart({
@@ -23,6 +25,7 @@ export function SLADonutChart({
   total,
   createdAt,
   delay = 0,
+  trend = 'stable',
 }: SLADonutChartProps) {
   const radius = (size - strokeWidth) / 2;
   const circumference = 2 * Math.PI * radius;
@@ -67,11 +70,16 @@ export function SLADonutChart({
       animate={{ opacity: 1, y: 0, scale: 1 }}
       transition={{ delay, duration: 0.4, ease: 'easeOut' }}
       whileHover={{ scale: 1.02 }}
-      className="glass rounded-xl p-5 transition-all hover:shadow-lg hover:shadow-primary/5"
+      className="glass rounded-xl p-5 transition-all hover:shadow-lg hover:shadow-primary/5 relative"
     >
+      {/* Trend Indicator */}
+      <div className="absolute top-3 right-3">
+        <TrendIndicator trend={trend} size={16} />
+      </div>
+
       <div className="flex flex-col items-center">
         {/* Name */}
-        <h3 className="mb-4 text-center text-sm font-semibold text-foreground line-clamp-2 h-10">
+        <h3 className="mb-4 text-center text-sm font-semibold text-foreground line-clamp-2 h-10 pr-5">
           {nome}
         </h3>
 

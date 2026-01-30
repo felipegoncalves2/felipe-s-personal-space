@@ -1,12 +1,13 @@
 import { useState } from 'react';
 import { motion } from 'framer-motion';
-import { Mail, Plus, Trash2, Save } from 'lucide-react';
+import { Mail, Plus, Trash2, Save, Send, Loader2, CheckCircle2, XCircle } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
 import { Switch } from '@/components/ui/switch';
 import { Textarea } from '@/components/ui/textarea';
 import { toast } from 'sonner';
+import { supabase } from '@/integrations/supabase/client';
 
 interface EmailConfig {
   host: string;
@@ -43,9 +44,13 @@ Atenciosamente,
 TECHUB Monitor`,
 };
 
+type TestStatus = 'idle' | 'testing' | 'success' | 'error';
+
 export function EmailSettings() {
   const [config, setConfig] = useState<EmailConfig>(DEFAULT_EMAIL_CONFIG);
   const [isSaving, setIsSaving] = useState(false);
+  const [testStatus, setTestStatus] = useState<TestStatus>('idle');
+  const [testError, setTestError] = useState<string | null>(null);
 
   const handleAddRecipient = () => {
     setConfig((prev) => ({
@@ -74,6 +79,51 @@ export function EmailSettings() {
     await new Promise((resolve) => setTimeout(resolve, 1000));
     toast.success('Configurações de email salvas com sucesso!');
     setIsSaving(false);
+  };
+
+  // Check if test button should be enabled
+  const canTestEmail = Boolean(
+    config.host.trim() &&
+    config.port.trim() &&
+    config.username.trim() &&
+    config.password.trim() &&
+    (config.useTls || config.useSsl) &&
+    config.recipients.some(r => r.trim().length > 0)
+  );
+
+  const handleTestEmail = async () => {
+    setTestStatus('testing');
+    setTestError(null);
+
+    try {
+      const { data, error } = await supabase.functions.invoke('test-email', {
+        body: {
+          host: config.host,
+          port: config.port,
+          username: config.username,
+          password: config.password,
+          useTls: config.useTls,
+          useSsl: config.useSsl,
+          recipients: config.recipients.filter(r => r.trim().length > 0),
+        },
+      });
+
+      if (error) {
+        throw new Error(error.message || 'Erro ao enviar email de teste');
+      }
+
+      if (data?.success) {
+        setTestStatus('success');
+        toast.success('Email de teste enviado com sucesso!');
+      } else {
+        throw new Error(data?.error || 'Erro desconhecido');
+      }
+    } catch (err: any) {
+      setTestStatus('error');
+      const errorMessage = err.message || 'Erro ao enviar email de teste';
+      setTestError(errorMessage);
+      toast.error(errorMessage);
+    }
   };
 
   return (
@@ -196,6 +246,38 @@ export function EmailSettings() {
               Adicionar destinatário
             </Button>
           </div>
+        </div>
+      </div>
+
+      {/* Test Email Button */}
+      <div className="flex items-center gap-4 p-4 rounded-lg bg-secondary/30 border border-border">
+        <Button
+          onClick={handleTestEmail}
+          disabled={!canTestEmail || testStatus === 'testing'}
+          variant="outline"
+          className="flex items-center gap-2"
+        >
+          {testStatus === 'testing' ? (
+            <Loader2 className="h-4 w-4 animate-spin" />
+          ) : testStatus === 'success' ? (
+            <CheckCircle2 className="h-4 w-4 text-chart-green" />
+          ) : testStatus === 'error' ? (
+            <XCircle className="h-4 w-4 text-chart-red" />
+          ) : (
+            <Send className="h-4 w-4" />
+          )}
+          {testStatus === 'testing' ? 'Testando...' : '🔄 Testar envio de email'}
+        </Button>
+        
+        <div className="text-sm text-muted-foreground">
+          {testStatus === 'idle' && 'Preencha todos os campos para testar'}
+          {testStatus === 'testing' && 'Enviando email de teste...'}
+          {testStatus === 'success' && '✅ Envio realizado com sucesso'}
+          {testStatus === 'error' && (
+            <span className="text-chart-red">
+              ❌ Falha no envio{testError && `: ${testError}`}
+            </span>
+          )}
         </div>
       </div>
 

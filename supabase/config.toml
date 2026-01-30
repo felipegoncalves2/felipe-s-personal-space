@@ -1,1 +1,19 @@
 project_id = "qromvrzqktrfexbnaoem"
+
+[functions.get-monitoring-data]
+verify_jwt = false
+
+[functions.get-users]
+verify_jwt = false
+
+[functions.login]
+verify_jwt = false
+
+[functions.logout]
+verify_jwt = false
+
+[functions.validate-session]
+verify_jwt = false
+
+[functions.test-email]
+verify_jwt = false

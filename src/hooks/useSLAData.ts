@@ -1,6 +1,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { SLAData } from '@/types';
+import { calculateTrend, TrendDirection } from '@/components/common/TrendIndicator';
 
 type SLAType = 'fila' | 'projetos';
 
@@ -18,7 +19,6 @@ export function useSLAData(type: SLAType) {
       setError(null);
 
       const tableName = type === 'fila' ? 'sla_fila_rn' : 'sla_projetos_rn';
-      const nameField = type === 'fila' ? 'nome_fila' : 'nome_projeto';
 
       // Fetch all records ordered by created_at desc
       const { data: rawData, error: fetchError } = await supabase
@@ -30,38 +30,53 @@ export function useSLAData(type: SLAType) {
         throw new Error(fetchError.message);
       }
 
-      // Get the latest record for each fila/projeto
-      const latestRecords = new Map<string, typeof rawData[0]>();
+      // Group records by name and get latest + previous
+      const recordsByName = new Map<string, Array<typeof rawData[0]>>();
       
       for (const record of rawData || []) {
         const name = type === 'fila' 
           ? (record as { nome_fila: string }).nome_fila 
           : (record as { nome_projeto: string }).nome_projeto;
         
-        if (!latestRecords.has(name)) {
-          latestRecords.set(name, record);
+        if (!recordsByName.has(name)) {
+          recordsByName.set(name, []);
+        }
+        
+        const records = recordsByName.get(name)!;
+        if (records.length < 2) {
+          records.push(record);
         }
       }
 
-      // Transform to SLAData format with calculated percentual
-      const processedData: SLAData[] = Array.from(latestRecords.values()).map((record) => {
-        const dentro = record.dentro || 0;
-        const fora = record.fora || 0;
+      // Transform to SLAData format with calculated percentual and trend
+      const processedData: SLAData[] = Array.from(recordsByName.entries()).map(([name, records]) => {
+        const current = records[0];
+        const previous = records[1];
+        
+        const dentro = current.dentro || 0;
+        const fora = current.fora || 0;
         const total = dentro + fora;
         const percentual = total > 0 ? Number(((dentro / total) * 100).toFixed(2)) : 0;
         
-        const nome = type === 'fila' 
-          ? (record as { nome_fila: string }).nome_fila 
-          : (record as { nome_projeto: string }).nome_projeto;
+        // Calculate previous percentual for trend
+        let trend: TrendDirection = 'stable';
+        if (previous) {
+          const prevDentro = previous.dentro || 0;
+          const prevFora = previous.fora || 0;
+          const prevTotal = prevDentro + prevFora;
+          const prevPercentual = prevTotal > 0 ? Number(((prevDentro / prevTotal) * 100).toFixed(2)) : 0;
+          trend = calculateTrend(percentual, prevPercentual);
+        }
 
         return {
-          id: record.id,
-          nome,
+          id: current.id,
+          nome: name,
           dentro,
           fora,
           total,
           percentual,
-          created_at: record.created_at,
+          created_at: current.created_at,
+          trend,
         };
       });
 

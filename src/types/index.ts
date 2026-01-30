@@ -1,3 +1,5 @@
+import { TrendDirection } from '@/components/common/TrendIndicator';
+
 export interface User {
   id: number;
   full_name: string;
@@ -38,6 +40,7 @@ export interface MonitoringData {
   data_gravacao: string;
   monitoradas: number;
   percentual: number;
+  trend?: TrendDirection;
 }
 
 export interface SLAData {
@@ -48,6 +51,7 @@ export interface SLAData {
   total: number;
   percentual: number;
   created_at: string;
+  trend?: TrendDirection;
 }
 
 export interface UserListItem {
@@ -71,6 +75,7 @@ export interface Pagination {
 
 export interface PresentationSettings {
   id: string;
+  monitoring_type: MonitoringTypeKey;
   companies_per_page: number;
   interval_seconds: number;
   min_percentage: number | null;
@@ -83,3 +88,20 @@ export interface PresentationSettings {
 }
 
 export type MonitoringTabType = 'mps' | 'sla-fila' | 'sla-projetos';
+export type MonitoringTypeKey = 'mps' | 'sla_fila' | 'sla_projetos';
+
+export function tabToMonitoringType(tab: MonitoringTabType): MonitoringTypeKey {
+  switch (tab) {
+    case 'sla-fila': return 'sla_fila';
+    case 'sla-projetos': return 'sla_projetos';
+    default: return 'mps';
+  }
+}
+
+export function monitoringTypeToTab(type: MonitoringTypeKey): MonitoringTabType {
+  switch (type) {
+    case 'sla_fila': return 'sla-fila';
+    case 'sla_projetos': return 'sla-projetos';
+    default: return 'mps';
+  }
+}
