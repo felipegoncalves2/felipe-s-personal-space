@@ -6,12 +6,17 @@ const corsHeaders = {
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type, x-supabase-client-platform, x-supabase-client-platform-version, x-supabase-client-runtime, x-supabase-client-runtime-version',
 };
 
-// Bcrypt comparison - using compareSync to avoid Worker issues in Edge Runtime
-async function verifyPassword(password: string, hash: string): Promise<boolean> {
+// Password verification - supports both bcrypt hashes and plain text
+async function verifyPassword(password: string, storedPassword: string): Promise<boolean> {
   try {
-    return bcrypt.compareSync(password, hash);
+    // Check if stored password is a bcrypt hash (starts with $2a$, $2b$, or $2y$)
+    if (storedPassword.startsWith('$2')) {
+      return bcrypt.compareSync(password, storedPassword);
+    }
+    // Fallback: plain text comparison (for legacy/dev purposes)
+    return password === storedPassword;
   } catch (error) {
-    console.error("Bcrypt error:", error);
+    console.error("Password verification error:", error);
     return false;
   }
 }
