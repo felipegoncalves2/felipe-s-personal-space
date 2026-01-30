@@ -6,6 +6,7 @@ import { MonitoringGrid } from '@/components/monitoring/MonitoringGrid';
 import { EmailSettings } from '@/components/settings/EmailSettings';
 import { SupabaseSettings } from '@/components/settings/SupabaseSettings';
 import { UsersTable } from '@/components/settings/UsersTable';
+import { PresentationSettings } from '@/components/settings/PresentationSettings';
 import { useAuth } from '@/contexts/AuthContext';
 
 export default function DashboardPage() {
@@ -40,6 +41,7 @@ export default function DashboardPage() {
               <TabsTrigger value="email">Email (SMTP)</TabsTrigger>
               <TabsTrigger value="supabase">Supabase</TabsTrigger>
               <TabsTrigger value="users">Usuários</TabsTrigger>
+              <TabsTrigger value="presentation">Apresentação</TabsTrigger>
             </TabsList>
 
             <motion.div
@@ -57,6 +59,10 @@ export default function DashboardPage() {
 
               <TabsContent value="users" className="m-0">
                 <UsersTable />
+              </TabsContent>
+
+              <TabsContent value="presentation" className="m-0">
+                <PresentationSettings />
               </TabsContent>
             </motion.div>
           </Tabs>

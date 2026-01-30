@@ -1,6 +1,7 @@
 import { useState, useMemo } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
-import { Search, RefreshCw, Filter, ArrowUpDown, Loader2 } from 'lucide-react';
+import { Search, RefreshCw, Filter, ArrowUpDown, Loader2, Play } from 'lucide-react';
 import { DonutChart } from './DonutChart';
 import { useMonitoringData } from '@/hooks/useMonitoringData';
 import { Input } from '@/components/ui/input';
@@ -19,6 +20,7 @@ type StatusFilter = 'all' | 'green' | 'yellow' | 'red';
 const ITEMS_PER_PAGE_OPTIONS = [3, 5, 10, 20, 30];
 
 export function MonitoringGrid() {
+  const navigate = useNavigate();
   const { data, isLoading, error, lastUpdated, refetch } = useMonitoringData();
   const [searchTerm, setSearchTerm] = useState('');
   const [sortOrder, setSortOrder] = useState<SortOrder>('desc');
@@ -188,7 +190,7 @@ export function MonitoringGrid() {
           </Select>
         </div>
 
-        {/* Refresh */}
+        {/* Actions */}
         <div className="flex items-center gap-3">
           {lastUpdated && (
             <span className="text-xs text-muted-foreground">
@@ -204,6 +206,15 @@ export function MonitoringGrid() {
           >
             <RefreshCw className={`mr-2 h-4 w-4 ${isLoading ? 'animate-spin' : ''}`} />
             Atualizar
+          </Button>
+          <Button
+            variant="default"
+            size="sm"
+            onClick={() => navigate('/apresentacao')}
+            className="bg-primary hover:bg-primary/90"
+          >
+            <Play className="mr-2 h-4 w-4" />
+            Modo Apresentação
           </Button>
         </div>
       </div>

@@ -58,3 +58,16 @@ export interface Pagination {
   total: number;
   total_pages: number;
 }
+
+export interface PresentationSettings {
+  id: string;
+  companies_per_page: number;
+  interval_seconds: number;
+  min_percentage: number | null;
+  max_percentage: number | null;
+  ignore_green: boolean;
+  ignore_yellow: boolean;
+  ignore_red: boolean;
+  created_at: string;
+  updated_at: string;
+}
