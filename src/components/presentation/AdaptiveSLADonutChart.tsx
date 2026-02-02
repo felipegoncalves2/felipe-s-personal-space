@@ -11,6 +11,8 @@ interface AdaptiveSLADonutChartProps {
   createdAt: string;
   scale: number;
   trend?: TrendDirection;
+  thresholdExcellent?: number;
+  thresholdAttention?: number;
 }
 
 export function AdaptiveSLADonutChart({
@@ -22,33 +24,34 @@ export function AdaptiveSLADonutChart({
   createdAt,
   scale,
   trend = 'stable',
+  thresholdExcellent = 98,
+  thresholdAttention = 80,
 }: AdaptiveSLADonutChartProps) {
-  // Base sizes that will be scaled
-  const baseSize = 140;
-  const baseStrokeWidth = 12;
-  const baseFontSize = 24;
-  const baseSmallFontSize = 10;
-  const basePadding = 20;
-
-  // Apply scale
-  const size = Math.round(baseSize * scale);
-  const strokeWidth = Math.max(4, Math.round(baseStrokeWidth * scale));
-  const fontSize = Math.max(12, Math.round(baseFontSize * scale));
-  const smallFontSize = Math.max(8, Math.round(baseSmallFontSize * scale));
-  const padding = Math.max(8, Math.round(basePadding * scale));
-
-  const radius = (size - strokeWidth) / 2;
+  // Calculate sizes based on scale - MATCHING AdaptiveDonutChart exactly
+  const donutSize = Math.max(60, Math.round(200 * scale));
+  const strokeWidth = Math.max(6, Math.round(16 * scale));
+  const radius = (donutSize - strokeWidth) / 2;
   const circumference = 2 * Math.PI * radius;
   const offset = circumference - (percentage / 100) * circumference;
 
+  // Font sizes based on scale - MATCHING AdaptiveDonutChart exactly
+  const titleSize = Math.max(14, Math.round(24 * scale)); // Title (nome)
+  const percentageSize = Math.max(16, Math.round(32 * scale)); // Percentage
+  const statusSize = Math.max(11, Math.round(16 * scale));
+  const statsSize = Math.max(10, Math.round(14 * scale));
+  const dateSize = Math.max(9, Math.round(12 * scale));
+
+  // Padding based on scale - MATCHING AdaptiveDonutChart
+  const padding = Math.max(8, Math.round(24 * scale));
+
   const { color, bgColor, statusLabel } = useMemo(() => {
-    if (percentage >= 98) {
+    if (percentage >= thresholdExcellent) {
       return {
         color: 'hsl(var(--chart-green))',
         bgColor: 'hsl(var(--chart-green) / 0.15)',
         statusLabel: 'Excelente',
       };
-    } else if (percentage >= 80) {
+    } else if (percentage >= thresholdAttention) {
       return {
         color: 'hsl(var(--chart-yellow))',
         bgColor: 'hsl(var(--chart-yellow) / 0.15)',
@@ -61,7 +64,7 @@ export function AdaptiveSLADonutChart({
         statusLabel: 'Crítico',
       };
     }
-  }, [percentage]);
+  }, [percentage, thresholdExcellent, thresholdAttention]);
 
   const formattedDate = useMemo(() => {
     const date = new Date(createdAt);
@@ -91,24 +94,24 @@ export function AdaptiveSLADonutChart({
       </div>
 
       {/* Name */}
-      <h3 
+      <h3
         className="text-center font-semibold text-foreground line-clamp-2 mb-2"
-        style={{ fontSize: Math.max(11, fontSize * 0.5), paddingRight: `${trendSize + 4}px` }}
+        style={{ fontSize: titleSize, paddingRight: `${trendSize + 4}px` }}
       >
         {nome}
       </h3>
 
       {/* Donut Chart */}
-      <div className="relative flex-shrink-0" style={{ width: size, height: size }}>
+      <div className="relative flex-shrink-0" style={{ width: donutSize, height: donutSize }}>
         <svg
-          width={size}
-          height={size}
+          width={donutSize}
+          height={donutSize}
           className="-rotate-90 transform"
         >
           {/* Background circle */}
           <circle
-            cx={size / 2}
-            cy={size / 2}
+            cx={donutSize / 2}
+            cy={donutSize / 2}
             r={radius}
             fill="none"
             stroke={bgColor}
@@ -116,8 +119,8 @@ export function AdaptiveSLADonutChart({
           />
           {/* Progress circle */}
           <motion.circle
-            cx={size / 2}
-            cy={size / 2}
+            cx={donutSize / 2}
+            cy={donutSize / 2}
             r={radius}
             fill="none"
             stroke={color}
@@ -134,13 +137,13 @@ export function AdaptiveSLADonutChart({
         <div className="absolute inset-0 flex flex-col items-center justify-center">
           <span
             className="font-bold"
-            style={{ fontSize, color }}
+            style={{ fontSize: percentageSize, color }}
           >
             {percentage.toFixed(2)}%
           </span>
           <span
             className="font-medium text-muted-foreground"
-            style={{ fontSize: smallFontSize }}
+            style={{ fontSize: statusSize }}
           >
             {statusLabel}
           </span>
@@ -149,20 +152,20 @@ export function AdaptiveSLADonutChart({
 
       {/* Stats */}
       <div className="mt-2 w-full space-y-0.5 text-center">
-        <p className="text-muted-foreground" style={{ fontSize: smallFontSize }}>
+        <p className="text-muted-foreground" style={{ fontSize: statsSize }}>
           Dentro: <span className="font-medium text-foreground">{dentro.toLocaleString('pt-BR')}</span>
         </p>
-        <p className="text-muted-foreground" style={{ fontSize: smallFontSize }}>
+        <p className="text-muted-foreground" style={{ fontSize: statsSize }}>
           Fora: <span className="font-medium text-foreground">{fora.toLocaleString('pt-BR')}</span>
         </p>
-        <p className="text-muted-foreground" style={{ fontSize: smallFontSize }}>
+        <p className="text-muted-foreground" style={{ fontSize: statsSize }}>
           Total: <span className="font-medium text-foreground">{total.toLocaleString('pt-BR')}</span>
         </p>
       </div>
 
       {/* Date */}
       <div className="mt-2 pt-2 border-t border-border w-full text-center">
-        <p className="text-muted-foreground" style={{ fontSize: Math.max(7, smallFontSize * 0.9) }}>
+        <p className="text-muted-foreground" style={{ fontSize: dateSize }}>
           Atualização: <span className="font-medium">{formattedDate}</span>
         </p>
       </div>

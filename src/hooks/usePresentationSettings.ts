@@ -11,6 +11,9 @@ const DEFAULT_SETTINGS: Omit<PresentationSettings, 'id' | 'created_at' | 'update
   ignore_green: false,
   ignore_yellow: false,
   ignore_red: false,
+  threshold_excellent: 98,
+  threshold_attention: 80,
+  threshold_critical: 80,
 };
 
 export function usePresentationSettings(monitoringType: MonitoringTypeKey = 'mps') {

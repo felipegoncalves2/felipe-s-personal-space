@@ -88,6 +88,9 @@ export interface PresentationSettings {
   ignore_green: boolean;
   ignore_yellow: boolean;
   ignore_red: boolean;
+  threshold_excellent: number;
+  threshold_attention: number;
+  threshold_critical: number;
   created_at: string;
   updated_at: string;
 }

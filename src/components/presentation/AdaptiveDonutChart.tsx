@@ -10,6 +10,8 @@ interface AdaptiveDonutChartProps {
   dataGravacao: string;
   scale: number; // 0-1 scale factor based on viewport and density
   trend?: TrendDirection;
+  thresholdExcellent?: number;
+  thresholdAttention?: number;
 }
 
 export function AdaptiveDonutChart({
@@ -20,6 +22,8 @@ export function AdaptiveDonutChart({
   dataGravacao,
   scale,
   trend = 'stable',
+  thresholdExcellent = 98,
+  thresholdAttention = 80,
 }: AdaptiveDonutChartProps) {
   // Calculate sizes based on scale
   const donutSize = Math.max(60, Math.round(200 * scale));
@@ -28,24 +32,24 @@ export function AdaptiveDonutChart({
   const circumference = 2 * Math.PI * radius;
   const offset = circumference - (percentage / 100) * circumference;
 
-  // Font sizes based on scale
-  const titleSize = Math.max(10, Math.round(16 * scale));
-  const percentageSize = Math.max(14, Math.round(32 * scale));
-  const statusSize = Math.max(8, Math.round(12 * scale));
-  const statsSize = Math.max(8, Math.round(12 * scale));
-  const dateSize = Math.max(7, Math.round(10 * scale));
+  // Font sizes based on scale - Title increased ~50%, percentage reverted to original
+  const titleSize = Math.max(14, Math.round(24 * scale)); // Increased for readability
+  const percentageSize = Math.max(16, Math.round(32 * scale)); // Reverted to original size
+  const statusSize = Math.max(11, Math.round(16 * scale));
+  const statsSize = Math.max(10, Math.round(14 * scale));
+  const dateSize = Math.max(9, Math.round(12 * scale));
 
   // Padding based on scale
-  const padding = Math.max(8, Math.round(20 * scale));
+  const padding = Math.max(8, Math.round(24 * scale));
 
   const { color, bgColor, statusLabel } = useMemo(() => {
-    if (percentage >= 98) {
+    if (percentage >= thresholdExcellent) {
       return {
         color: 'hsl(var(--chart-green))',
         bgColor: 'hsl(var(--chart-green) / 0.15)',
         statusLabel: 'Excelente',
       };
-    } else if (percentage >= 80) {
+    } else if (percentage >= thresholdAttention) {
       return {
         color: 'hsl(var(--chart-yellow))',
         bgColor: 'hsl(var(--chart-yellow) / 0.15)',
@@ -58,7 +62,7 @@ export function AdaptiveDonutChart({
         statusLabel: 'Crítico',
       };
     }
-  }, [percentage]);
+  }, [percentage, thresholdExcellent, thresholdAttention]);
 
   const formattedDate = useMemo(() => {
     const date = new Date(dataGravacao);

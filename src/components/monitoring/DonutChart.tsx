@@ -20,6 +20,8 @@ interface DonutChartProps {
     label: string;
   };
   onClick?: () => void;
+  thresholdExcellent?: number;
+  thresholdAttention?: number;
 }
 
 export function DonutChart({
@@ -35,19 +37,21 @@ export function DonutChart({
   anomaly,
   comparison,
   onClick,
+  thresholdExcellent = 98,
+  thresholdAttention = 80,
 }: DonutChartProps) {
   const radius = (size - strokeWidth) / 2;
   const circumference = 2 * Math.PI * radius;
   const offset = circumference - (percentage / 100) * circumference;
 
   const { color, bgColor, statusLabel } = useMemo(() => {
-    if (percentage >= 98) {
+    if (percentage >= thresholdExcellent) {
       return {
         color: 'hsl(var(--chart-green))',
         bgColor: 'hsl(var(--chart-green) / 0.15)',
         statusLabel: 'Excelente',
       };
-    } else if (percentage >= 80) {
+    } else if (percentage >= thresholdAttention) {
       return {
         color: 'hsl(var(--chart-yellow))',
         bgColor: 'hsl(var(--chart-yellow) / 0.15)',
@@ -60,7 +64,7 @@ export function DonutChart({
         statusLabel: 'Crítico',
       };
     }
-  }, [percentage]);
+  }, [percentage, thresholdExcellent, thresholdAttention]);
 
   const formattedDate = useMemo(() => {
     const date = new Date(dataGravacao);

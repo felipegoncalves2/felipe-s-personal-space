@@ -14,6 +14,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
+import { usePresentationSettings } from '@/hooks/usePresentationSettings';
 
 type SortOrder = 'asc' | 'desc';
 type StatusFilter = 'all' | 'green' | 'yellow' | 'red';
@@ -23,6 +24,7 @@ const ITEMS_PER_PAGE_OPTIONS = [3, 5, 10, 20, 30];
 export function MonitoringGrid() {
   const navigate = useNavigate();
   const { data, isLoading, error, lastUpdated, refetch } = useMonitoringData();
+  const { settings } = usePresentationSettings('mps');
   const [searchTerm, setSearchTerm] = useState('');
   const [sortOrder, setSortOrder] = useState<SortOrder>('desc');
   const [statusFilter, setStatusFilter] = useState<StatusFilter>('all');
@@ -41,12 +43,14 @@ export function MonitoringGrid() {
       );
     }
 
-    // Filter by status
+    // Filter by status using dynamic thresholds
     if (statusFilter !== 'all') {
+      const thresholdExcellent = settings.threshold_excellent ?? 98;
+      const thresholdAttention = settings.threshold_attention ?? 80;
       result = result.filter((item) => {
-        if (statusFilter === 'green') return item.percentual >= 98;
-        if (statusFilter === 'yellow') return item.percentual >= 80 && item.percentual < 98;
-        if (statusFilter === 'red') return item.percentual < 80;
+        if (statusFilter === 'green') return item.percentual >= thresholdExcellent;
+        if (statusFilter === 'yellow') return item.percentual >= thresholdAttention && item.percentual < thresholdExcellent;
+        if (statusFilter === 'red') return item.percentual < thresholdAttention;
         return true;
       });
     }
@@ -198,13 +202,13 @@ export function MonitoringGrid() {
             {lastUpdated && (
               <>
                 <div className={`flex items-center gap-1.5 px-2 py-1 rounded-full text-xs font-medium border ${new Date().getTime() - lastUpdated.getTime() < 1000 * 60 * 10
-                    ? 'bg-green-500/10 text-green-500 border-green-500/20'
-                    : new Date().getTime() - lastUpdated.getTime() < 1000 * 60 * 60
-                      ? 'bg-yellow-500/10 text-yellow-500 border-yellow-500/20'
-                      : 'bg-red-500/10 text-red-500 border-red-500/20'
+                  ? 'bg-green-500/10 text-green-500 border-green-500/20'
+                  : new Date().getTime() - lastUpdated.getTime() < 1000 * 60 * 60
+                    ? 'bg-yellow-500/10 text-yellow-500 border-yellow-500/20'
+                    : 'bg-red-500/10 text-red-500 border-red-500/20'
                   }`}>
                   <div className={`w-2 h-2 rounded-full ${new Date().getTime() - lastUpdated.getTime() < 1000 * 60 * 10 ? 'bg-green-500' :
-                      new Date().getTime() - lastUpdated.getTime() < 1000 * 60 * 60 ? 'bg-yellow-500' : 'bg-red-500'
+                    new Date().getTime() - lastUpdated.getTime() < 1000 * 60 * 60 ? 'bg-yellow-500' : 'bg-red-500'
                     }`} />
                   {new Date().getTime() - lastUpdated.getTime() < 1000 * 60 * 10 ? 'Dados Recentes' :
                     new Date().getTime() - lastUpdated.getTime() < 1000 * 60 * 60 ? 'Dados < 1h' : 'Dados Antigos'}
@@ -260,6 +264,8 @@ export function MonitoringGrid() {
               trend={item.trend}
               anomaly={item.anomaly}
               comparison={item.comparison}
+              thresholdExcellent={settings.threshold_excellent ?? 98}
+              thresholdAttention={settings.threshold_attention ?? 80}
               onClick={() => setSelectedItem({ empresa: item.empresa })}
             />
           ))}

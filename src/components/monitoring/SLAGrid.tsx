@@ -14,6 +14,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
+import { usePresentationSettings } from '@/hooks/usePresentationSettings';
 
 type SortOrder = 'asc' | 'desc';
 type StatusFilter = 'all' | 'green' | 'yellow' | 'red';
@@ -28,6 +29,7 @@ interface SLAGridProps {
 export function SLAGrid({ type }: SLAGridProps) {
   const navigate = useNavigate();
   const { data, isLoading, error, lastUpdated, refetch } = useSLAData(type);
+  const { settings } = usePresentationSettings(type === 'fila' ? 'sla_fila' : 'sla_projetos');
   const [searchTerm, setSearchTerm] = useState('');
   const [sortOrder, setSortOrder] = useState<SortOrder>('desc');
   const [statusFilter, setStatusFilter] = useState<StatusFilter>('all');
@@ -46,12 +48,14 @@ export function SLAGrid({ type }: SLAGridProps) {
       );
     }
 
-    // Filter by status
+    // Filter by status using dynamic thresholds
     if (statusFilter !== 'all') {
+      const thresholdExcellent = settings.threshold_excellent ?? 98;
+      const thresholdAttention = settings.threshold_attention ?? 80;
       result = result.filter((item) => {
-        if (statusFilter === 'green') return item.percentual >= 98;
-        if (statusFilter === 'yellow') return item.percentual >= 80 && item.percentual < 98;
-        if (statusFilter === 'red') return item.percentual < 80;
+        if (statusFilter === 'green') return item.percentual >= thresholdExcellent;
+        if (statusFilter === 'yellow') return item.percentual >= thresholdAttention && item.percentual < thresholdExcellent;
+        if (statusFilter === 'red') return item.percentual < thresholdAttention;
         return true;
       });
     }
@@ -77,12 +81,14 @@ export function SLAGrid({ type }: SLAGridProps) {
   };
 
   const statusCounts = useMemo(() => {
+    const thresholdExcellent = settings.threshold_excellent ?? 98;
+    const thresholdAttention = settings.threshold_attention ?? 80;
     return {
-      green: data.filter((d) => d.percentual >= 98).length,
-      yellow: data.filter((d) => d.percentual >= 80 && d.percentual < 98).length,
-      red: data.filter((d) => d.percentual < 80).length,
+      green: data.filter((d) => d.percentual >= thresholdExcellent).length,
+      yellow: data.filter((d) => d.percentual >= thresholdAttention && d.percentual < thresholdExcellent).length,
+      red: data.filter((d) => d.percentual < thresholdAttention).length,
     };
-  }, [data]);
+  }, [data, settings.threshold_excellent, settings.threshold_attention]);
 
   const typeLabel = type === 'fila' ? 'Fila' : 'Projeto';
   const searchPlaceholder = type === 'fila' ? 'Buscar fila...' : 'Buscar projeto...';
@@ -251,6 +257,8 @@ export function SLAGrid({ type }: SLAGridProps) {
               createdAt={item.created_at}
               delay={index * 0.05}
               trend={item.trend}
+              thresholdExcellent={settings.threshold_excellent ?? 98}
+              thresholdAttention={settings.threshold_attention ?? 80}
               onClick={() => setSelectedItem({ nome: item.nome })}
             />
           ))}

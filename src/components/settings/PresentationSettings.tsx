@@ -40,6 +40,9 @@ function PresentationSettingsForm({ monitoringType }: { monitoringType: Monitori
   const [ignoreGreen, setIgnoreGreen] = useState(false);
   const [ignoreYellow, setIgnoreYellow] = useState(false);
   const [ignoreRed, setIgnoreRed] = useState(false);
+  const [thresholdExcellent, setThresholdExcellent] = useState(98);
+  const [thresholdAttention, setThresholdAttention] = useState(80);
+  const [thresholdCritical, setThresholdCritical] = useState(80);
 
   useEffect(() => {
     if (settings) {
@@ -50,6 +53,9 @@ function PresentationSettingsForm({ monitoringType }: { monitoringType: Monitori
       setIgnoreGreen(settings.ignore_green);
       setIgnoreYellow(settings.ignore_yellow);
       setIgnoreRed(settings.ignore_red);
+      setThresholdExcellent(settings.threshold_excellent ?? 98);
+      setThresholdAttention(settings.threshold_attention ?? 80);
+      setThresholdCritical(settings.threshold_critical ?? 80);
     }
   }, [settings]);
 
@@ -64,6 +70,9 @@ function PresentationSettingsForm({ monitoringType }: { monitoringType: Monitori
         ignore_green: ignoreGreen,
         ignore_yellow: ignoreYellow,
         ignore_red: ignoreRed,
+        threshold_excellent: thresholdExcellent,
+        threshold_attention: thresholdAttention,
+        threshold_critical: thresholdCritical,
       });
 
       if (result.success) {
@@ -91,7 +100,7 @@ function PresentationSettingsForm({ monitoringType }: { monitoringType: Monitori
         <h4 className="font-medium text-foreground border-b border-border pb-2">
           📐 Layout
         </h4>
-        
+
         <div className="grid gap-4 md:grid-cols-2">
           <div className="space-y-2">
             <Label htmlFor={`companies-per-page-${monitoringType}`}>Empresas por tela</Label>
@@ -119,7 +128,7 @@ function PresentationSettingsForm({ monitoringType }: { monitoringType: Monitori
         <h4 className="font-medium text-foreground border-b border-border pb-2">
           ⏱️ Tempo
         </h4>
-        
+
         <div className="grid gap-4 md:grid-cols-2">
           <div className="space-y-2">
             <Label htmlFor={`interval-seconds-${monitoringType}`}>Intervalo entre páginas (segundos)</Label>
@@ -142,7 +151,7 @@ function PresentationSettingsForm({ monitoringType }: { monitoringType: Monitori
         <h4 className="font-medium text-foreground border-b border-border pb-2">
           🎯 Filtros
         </h4>
-        
+
         <div className="grid gap-4 md:grid-cols-2">
           <div className="space-y-2">
             <Label htmlFor={`min-percentage-${monitoringType}`}>Ignorar itens com % abaixo de</Label>
@@ -177,7 +186,7 @@ function PresentationSettingsForm({ monitoringType }: { monitoringType: Monitori
 
         <div className="space-y-4 pt-2">
           <Label className="text-base">Ignorar por status</Label>
-          
+
           <div className="flex flex-wrap gap-6">
             <div className="flex items-center gap-3">
               <Switch
@@ -186,7 +195,7 @@ function PresentationSettingsForm({ monitoringType }: { monitoringType: Monitori
                 onCheckedChange={setIgnoreGreen}
               />
               <Label htmlFor={`ignore-green-${monitoringType}`} className="cursor-pointer">
-                🟢 Verde (≥98%)
+                🟢 Verde (Excluir)
               </Label>
             </div>
 
@@ -197,7 +206,7 @@ function PresentationSettingsForm({ monitoringType }: { monitoringType: Monitori
                 onCheckedChange={setIgnoreYellow}
               />
               <Label htmlFor={`ignore-yellow-${monitoringType}`} className="cursor-pointer">
-                🟡 Amarelo (80-97.9%)
+                🟡 Amarelo (Excluir)
               </Label>
             </div>
 
@@ -208,23 +217,77 @@ function PresentationSettingsForm({ monitoringType }: { monitoringType: Monitori
                 onCheckedChange={setIgnoreRed}
               />
               <Label htmlFor={`ignore-red-${monitoringType}`} className="cursor-pointer">
-                🔴 Vermelho (&lt;80%)
+                🔴 Vermelho (Excluir)
               </Label>
             </div>
           </div>
         </div>
       </div>
 
-      {/* Save Button */}
-      <div className="pt-4 border-t border-border">
-        <Button onClick={handleSave} disabled={isSaving} className="w-full sm:w-auto">
-          {isSaving ? (
-            <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-          ) : (
-            <Save className="mr-2 h-4 w-4" />
-          )}
-          Salvar Configurações
-        </Button>
+      {/* Thresholds Section */}
+      <div className="space-y-4">
+        <h4 className="font-medium text-foreground border-b border-border pb-2">
+          🎨 Faixas de Cor
+        </h4>
+
+        <div className="grid gap-4 md:grid-cols-3">
+          <div className="space-y-2">
+            <Label htmlFor={`threshold-excellent-${monitoringType}`}>Mínimo para Excelente 🟢</Label>
+            <Input
+              id={`threshold-excellent-${monitoringType}`}
+              type="number"
+              min={0}
+              max={100}
+              step={0.1}
+              value={thresholdExcellent}
+              onChange={(e) => setThresholdExcellent(Math.min(100, Math.max(0, parseFloat(e.target.value) || 0)))}
+              className="bg-secondary/50 border-chart-green/50 focus:border-chart-green"
+            />
+            <p className="text-xs text-muted-foreground">Padrão: 98%</p>
+          </div>
+
+          <div className="space-y-2">
+            <Label htmlFor={`threshold-attention-${monitoringType}`}>Mínimo para Atenção 🟡</Label>
+            <Input
+              id={`threshold-attention-${monitoringType}`}
+              type="number"
+              min={0}
+              max={100}
+              step={0.1}
+              value={thresholdAttention}
+              onChange={(e) => setThresholdAttention(Math.min(100, Math.max(0, parseFloat(e.target.value) || 0)))}
+              className="bg-secondary/50 border-chart-yellow/50 focus:border-chart-yellow"
+            />
+            <p className="text-xs text-muted-foreground">Padrão: 80%</p>
+          </div>
+
+          <div className="space-y-2">
+            <Label htmlFor={`threshold-critical-${monitoringType}`}>Máximo para Crítico 🔴</Label>
+            <Input
+              id={`threshold-critical-${monitoringType}`}
+              type="number"
+              min={0}
+              max={100}
+              step={0.1}
+              value={thresholdCritical}
+              onChange={(e) => setThresholdCritical(Math.min(100, Math.max(0, parseFloat(e.target.value) || 0)))}
+              className="bg-secondary/50 border-chart-red/50 focus:border-chart-red"
+            />
+            <p className="text-xs text-muted-foreground">Padrão: 80%</p>
+          </div>
+        </div>
+
+        {/* Save Button */}
+        <div className="pt-4 border-t border-border">
+          <Button onClick={handleSave} disabled={isSaving} className="w-full sm:w-auto">
+            {isSaving ? (
+              <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+            ) : (
+              <Save className="mr-2 h-4 w-4" />
+            )}
+            Salvar Configurações
+          </Button>
+        </div>
       </div>
     </div>
   );

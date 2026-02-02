@@ -13,9 +13,13 @@ import { MonitoringData, SLAData, MonitoringTabType, tabToMonitoringType } from 
 import logoTechub from '@/assets/logo_techub.jpg';
 
 // Header and footer heights for layout calculation
-const HEADER_HEIGHT = 72;
+const HEADER_HEIGHT = 60;
+const KPI_BAR_HEIGHT = 140; // Increased to accommodate text-8xl
+const CONTROLS_HEIGHT = 60;
 const FOOTER_HEIGHT = 40;
 const CONTENT_PADDING = 24;
+
+// ... (existing imports and types)
 
 type PresentationItem = MonitoringData | SLAData;
 
@@ -92,9 +96,11 @@ export default function PresentationPage() {
       }
 
       // Filter by status
-      const isGreen = percentual >= 98;
-      const isYellow = percentual >= 80 && percentual < 98;
-      const isRed = percentual < 80;
+      const thresholdExcellent = settings.threshold_excellent ?? 98;
+      const thresholdAttention = settings.threshold_attention ?? 80;
+      const isGreen = percentual >= thresholdExcellent;
+      const isYellow = percentual >= thresholdAttention && percentual < thresholdExcellent;
+      const isRed = percentual < thresholdAttention;
 
       if (settings.ignore_green && isGreen) return false;
       if (settings.ignore_yellow && isYellow) return false;
@@ -103,6 +109,23 @@ export default function PresentationPage() {
       return true;
     });
   }, [rawData, settings]);
+
+  // Calculate Average KPI (Improvement 2)
+  const averageKPI = useMemo(() => {
+    if (!filteredData.length) return null;
+
+    // Only for MPS and SLA Fila as requested
+    if (activeTab === 'sla-projetos') return null;
+
+    const total = filteredData.reduce((acc, item) => {
+      const val = isSLAData(item) ? item.percentual : (item as MonitoringData).percentual;
+      return acc + val;
+    }, 0);
+
+    return total / filteredData.length;
+  }, [filteredData, activeTab]);
+
+  const showKPIBar = averageKPI !== null;
 
   // Paginate data
   const pages = useMemo(() => {
@@ -118,8 +141,8 @@ export default function PresentationPage() {
 
   const currentPage = pages[currentPageIndex] || [];
 
-  // Calculate available space for the grid
-  const contentHeight = viewport.height - HEADER_HEIGHT - FOOTER_HEIGHT - CONTENT_PADDING * 2;
+  // Calculate available space for the grid - Adjusted for KPI Bar
+  const contentHeight = viewport.height - HEADER_HEIGHT - (showKPIBar ? KPI_BAR_HEIGHT : 0) - FOOTER_HEIGHT - CONTENT_PADDING * 2;
   const contentWidth = viewport.width - CONTENT_PADDING * 2;
 
   // Use adaptive layout hook
@@ -259,6 +282,7 @@ export default function PresentationPage() {
     );
   }
 
+  // RENDER SECTION
   return (
     <div
       ref={containerRef}
@@ -266,11 +290,12 @@ export default function PresentationPage() {
       onMouseMove={handleMouseMove}
       onTouchStart={handleMouseMove}
     >
-      {/* Header with logo and page indicator */}
+      {/* Header (existing) */}
       <div
-        className="flex items-center justify-between px-6 flex-shrink-0"
+        className="flex items-center justify-between px-6 flex-shrink-0 relative z-20 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60"
         style={{ height: HEADER_HEIGHT }}
       >
+        {/* ... Header content ... */}
         <div className="flex items-center gap-4">
           <img
             src={logoTechub}
@@ -278,7 +303,7 @@ export default function PresentationPage() {
             className="h-10 w-auto rounded-lg"
           />
           <div>
-            <h1 className="text-xl font-bold text-foreground">{title}</h1>
+            <h1 className="text-3xl font-bold text-foreground">{title}</h1>
             <p className="text-sm text-muted-foreground">
               {filteredData.length} {itemLabel} monitoradas
             </p>
@@ -293,8 +318,8 @@ export default function PresentationPage() {
                 <div
                   key={index}
                   className={`h-2 rounded-full transition-all duration-500 ${index === currentPageIndex
-                      ? 'w-8 bg-primary'
-                      : 'w-2 bg-muted-foreground/30'
+                    ? 'w-8 bg-primary'
+                    : 'w-2 bg-muted-foreground/30'
                     }`}
                 />
               ))}
@@ -310,6 +335,24 @@ export default function PresentationPage() {
           </div>
         </div>
       </div>
+
+      {/* KPI Execution Bar (Improvement 2) */}
+      {showKPIBar && (
+        <div
+          className="w-full flex items-center justify-center bg-secondary/30 border-b border-border/50 backdrop-blur-sm z-10"
+          style={{ height: KPI_BAR_HEIGHT }}
+        >
+          <div className="flex items-center gap-8 px-12 py-4 rounded-full bg-background/50 border border-border/30 shadow-lg">
+            <span className="text-8xl font-extrabold text-muted-foreground uppercase tracking-wider">Média Geral</span>
+            <div className="h-10 w-px bg-border"></div>
+            <span className={`text-8xl font-extrabold ${averageKPI >= (settings.threshold_excellent ?? 98) ? 'text-chart-green' :
+              averageKPI >= (settings.threshold_attention ?? 80) ? 'text-chart-yellow' : 'text-chart-red'
+              }`}>
+              {averageKPI.toFixed(2)}%
+            </span>
+          </div>
+        </div>
+      )}
 
       {/* Main content with adaptive grid */}
       <div
@@ -356,6 +399,8 @@ export default function PresentationPage() {
                       createdAt={item.created_at}
                       scale={layout.scale}
                       trend={item.trend}
+                      thresholdExcellent={settings.threshold_excellent ?? 98}
+                      thresholdAttention={settings.threshold_attention ?? 80}
                     />
                   </motion.div>
                 );
@@ -382,6 +427,8 @@ export default function PresentationPage() {
                     dataGravacao={mpsItem.data_gravacao}
                     scale={layout.scale}
                     trend={mpsItem.trend}
+                    thresholdExcellent={settings.threshold_excellent ?? 98}
+                    thresholdAttention={settings.threshold_attention ?? 80}
                   />
                 </motion.div>
               );
