@@ -38,6 +38,48 @@ export type Database = {
         }
         Relationships: []
       }
+      monitoring_alert_settings: {
+        Row: {
+          anomaly_enabled: boolean
+          anomaly_moving_avg_days: number
+          anomaly_stddev_multiplier: number
+          auto_resolve_consecutive_readings: number
+          auto_resolve_enabled: boolean
+          created_at: string
+          id: string
+          tipo_monitoramento: string
+          trend_consecutive_periods: number
+          trend_enabled: boolean
+          updated_at: string
+        }
+        Insert: {
+          anomaly_enabled?: boolean
+          anomaly_moving_avg_days?: number
+          anomaly_stddev_multiplier?: number
+          auto_resolve_consecutive_readings?: number
+          auto_resolve_enabled?: boolean
+          created_at?: string
+          id?: string
+          tipo_monitoramento: string
+          trend_consecutive_periods?: number
+          trend_enabled?: boolean
+          updated_at?: string
+        }
+        Update: {
+          anomaly_enabled?: boolean
+          anomaly_moving_avg_days?: number
+          anomaly_stddev_multiplier?: number
+          auto_resolve_consecutive_readings?: number
+          auto_resolve_enabled?: boolean
+          created_at?: string
+          id?: string
+          tipo_monitoramento?: string
+          trend_consecutive_periods?: number
+          trend_enabled?: boolean
+          updated_at?: string
+        }
+        Relationships: []
+      }
       presentation_settings: {
         Row: {
           companies_per_page: number
@@ -50,6 +92,9 @@ export type Database = {
           max_percentage: number | null
           min_percentage: number | null
           monitoring_type: string
+          threshold_attention: number | null
+          threshold_critical: number | null
+          threshold_excellent: number | null
           updated_at: string
         }
         Insert: {
@@ -63,6 +108,9 @@ export type Database = {
           max_percentage?: number | null
           min_percentage?: number | null
           monitoring_type?: string
+          threshold_attention?: number | null
+          threshold_critical?: number | null
+          threshold_excellent?: number | null
           updated_at?: string
         }
         Update: {
@@ -76,6 +124,9 @@ export type Database = {
           max_percentage?: number | null
           min_percentage?: number | null
           monitoring_type?: string
+          threshold_attention?: number | null
+          threshold_critical?: number | null
+          threshold_excellent?: number | null
           updated_at?: string
         }
         Relationships: []
@@ -184,6 +235,48 @@ export type Database = {
           fora?: number
           id?: number
           nome_projeto?: string
+        }
+        Relationships: []
+      }
+      smtp_settings: {
+        Row: {
+          created_at: string
+          enabled: boolean
+          id: string
+          smtp_from_email: string
+          smtp_from_name: string
+          smtp_host: string
+          smtp_password: string
+          smtp_port: number
+          smtp_secure: boolean
+          smtp_user: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          enabled?: boolean
+          id?: string
+          smtp_from_email: string
+          smtp_from_name: string
+          smtp_host: string
+          smtp_password: string
+          smtp_port: number
+          smtp_secure?: boolean
+          smtp_user: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          enabled?: boolean
+          id?: string
+          smtp_from_email?: string
+          smtp_from_name?: string
+          smtp_host?: string
+          smtp_password?: string
+          smtp_port?: number
+          smtp_secure?: boolean
+          smtp_user?: string
+          updated_at?: string
         }
         Relationships: []
       }

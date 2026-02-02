@@ -42,13 +42,13 @@ export function useHistoryData({ type, identifier, isOpen, granularity = 'daily'
                 type === 'sla_fila' ? 'nome_fila' : 'nome_projeto';
 
             queryBuilder = supabase
-                .from(table)
+                .from(table as any)
                 .select(selectCols)
                 .eq(identifierCol, identifier)
                 .gte(timestampCol, startDate.toISOString())
                 .order(timestampCol, { ascending: true });
 
-            const { data, error } = await queryBuilder;
+            const { data, error } = await queryBuilder as { data: any[] | null; error: any };
 
             if (error) {
                 console.error('Error fetching history:', error);

@@ -56,11 +56,11 @@ export function useAlertSettings(initialType: AlertMonitoringType = 'mps') {
     const fetchSettings = useCallback(async (type: AlertMonitoringType) => {
         try {
             setIsLoading(true);
-            const { data, error } = await supabase
-                .from('monitoring_alert_settings')
+            const { data, error } = await (supabase
+                .from('monitoring_alert_settings' as any)
                 .select('*')
                 .eq('tipo_monitoramento', type)
-                .maybeSingle();
+                .maybeSingle());
 
             if (error) {
                 console.error('Error fetching alert settings:', error);
@@ -69,7 +69,7 @@ export function useAlertSettings(initialType: AlertMonitoringType = 'mps') {
             }
 
             if (data) {
-                setSettings(data as AlertSettings);
+                setSettings(data as unknown as AlertSettings);
             } else {
                 // Use defaults if not found
                 setSettings(DEFAULT_ALERT_SETTINGS[type]);
@@ -84,9 +84,8 @@ export function useAlertSettings(initialType: AlertMonitoringType = 'mps') {
     const saveSettings = async (newSettings: AlertSettings) => {
         try {
             // Upsert based on tipo_monitoramento (unique constraint)
-            // Check if ID exists to update or not. Actually upsert on unique key is easier.
-            const { data, error } = await supabase
-                .from('monitoring_alert_settings')
+            const { data, error } = await (supabase
+                .from('monitoring_alert_settings' as any)
                 .upsert(
                     {
                         tipo_monitoramento: newSettings.tipo_monitoramento,
@@ -102,14 +101,14 @@ export function useAlertSettings(initialType: AlertMonitoringType = 'mps') {
                     { onConflict: 'tipo_monitoramento' }
                 )
                 .select()
-                .single();
+                .single());
 
             if (error) {
                 throw error;
             }
 
             if (data) {
-                setSettings(data as AlertSettings);
+                setSettings(data as unknown as AlertSettings);
                 return true;
             }
             return false;
