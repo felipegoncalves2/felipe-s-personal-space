@@ -41,6 +41,11 @@ export interface MonitoringData {
   monitoradas: number;
   percentual: number;
   trend?: TrendDirection;
+  anomaly?: boolean;
+  comparison?: {
+    diffPercent: number;
+    label: string;
+  };
 }
 
 export interface SLAData {

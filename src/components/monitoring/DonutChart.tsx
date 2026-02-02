@@ -1,6 +1,8 @@
 import { motion } from 'framer-motion';
 import { useMemo } from 'react';
 import { TrendIndicator, TrendDirection } from '@/components/common/TrendIndicator';
+import { AlertBadge } from './AlertBadge';
+import { ArrowDown, ArrowUp } from 'lucide-react';
 
 interface DonutChartProps {
   percentage: number;
@@ -12,6 +14,11 @@ interface DonutChartProps {
   dataGravacao: string;
   delay?: number;
   trend?: TrendDirection;
+  anomaly?: boolean;
+  comparison?: {
+    diffPercent: number;
+    label: string;
+  };
   onClick?: () => void;
 }
 
@@ -25,6 +32,8 @@ export function DonutChart({
   dataGravacao,
   delay = 0,
   trend = 'stable',
+  anomaly,
+  comparison,
   onClick,
 }: DonutChartProps) {
   const radius = (size - strokeWidth) / 2;
@@ -71,18 +80,33 @@ export function DonutChart({
       transition={{ delay, duration: 0.4, ease: 'easeOut' }}
       whileHover={{ scale: 1.02 }}
       onClick={onClick}
-      className={`glass rounded-xl p-5 transition-all hover:shadow-lg hover:shadow-primary/5 relative ${onClick ? 'cursor-pointer hover:bg-white/5' : ''}`}
+      className={`glass rounded-xl p-5 transition-all hover:shadow-lg hover:shadow-primary/5 relative flex flex-col items-center ${onClick ? 'cursor-pointer hover:bg-white/5' : ''
+        } ${anomaly ? 'ring-2 ring-orange-500/50' : ''}`}
     >
-      {/* Trend Indicator */}
-      <div className="absolute top-3 right-3">
+      {/* Alerts & Trend */}
+      <div className="absolute top-3 right-3 flex flex-col gap-1 items-end">
         <TrendIndicator trend={trend} size={16} />
       </div>
 
-      <div className="flex flex-col items-center">
+      <div className="flex flex-col items-center w-full">
         {/* Company Name */}
-        <h3 className="mb-4 text-center text-sm font-semibold text-foreground line-clamp-2 h-10 pr-5">
+        <h3 className="mb-4 text-center text-sm font-semibold text-foreground line-clamp-2 h-10 pr-5 w-full">
           {empresa}
         </h3>
+
+        {/* Anomaly Badge */}
+        {anomaly && (
+          <div className="mb-2">
+            <AlertBadge type="anomaly" message="Comportamento anormal detectado (fora do padrão histórico)" />
+          </div>
+        )}
+
+        {/* Limit Alert Badge (Low Percentage) */}
+        {!anomaly && percentage < 80 && (
+          <div className="mb-2">
+            <AlertBadge type="limit" message="Desempenho Crítico: Abaixo de 80%" />
+          </div>
+        )}
 
         {/* Donut Chart */}
         <div className="relative" style={{ width: size, height: size }}>
@@ -137,6 +161,14 @@ export function DonutChart({
             </motion.span>
           </div>
         </div>
+
+        {/* Comparison Stats */}
+        {comparison && comparison.label !== 'N/A' && (
+          <div className={`mt-2 flex items-center gap-1 text-[10px] font-medium ${comparison.diffPercent >= 0 ? 'text-green-500' : 'text-red-500'}`}>
+            {comparison.diffPercent >= 0 ? <ArrowUp className="h-3 w-3" /> : <ArrowDown className="h-3 w-3" />}
+            {comparison.label}
+          </div>
+        )}
 
         {/* Stats */}
         <div className="mt-4 w-full space-y-1 text-center">

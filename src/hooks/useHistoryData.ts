@@ -4,10 +4,11 @@ import { format, subDays, startOfDay, parseISO } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 
 export type HistoryType = 'mps' | 'sla_fila' | 'sla_projetos';
+export type Granularity = 'daily' | 'hourly';
 
 export interface HistoryDataPoint {
-    date: string; // DD/MM
-    fullDate: string; // YYYY-MM-DD
+    date: string; // DD/MM or DD/MM HHh
+    fullDate: string; // YYYY-MM-DD or ISO
     percentual: number;
 }
 
@@ -15,41 +16,37 @@ interface UseHistoryDataProps {
     type: HistoryType;
     identifier: string; // empresa name or fila/projeto name
     isOpen: boolean;
+    granularity?: Granularity;
 }
 
-export function useHistoryData({ type, identifier, isOpen }: UseHistoryDataProps) {
+export function useHistoryData({ type, identifier, isOpen, granularity = 'daily' }: UseHistoryDataProps) {
     return useQuery({
-        queryKey: ['history', type, identifier],
+        queryKey: ['history', type, identifier, granularity],
         queryFn: async () => {
-            console.log('Fetching history for:', type, identifier);
+            console.log('Fetching history for:', type, identifier, granularity);
 
             const endDate = new Date();
-            const startDate = subDays(endDate, 15);
+            const daysToSubtract = granularity === 'hourly' ? 5 : 15;
+            const startDate = subDays(endDate, daysToSubtract);
 
             let queryBuilder;
 
-            if (type === 'mps') {
-                queryBuilder = supabase
-                    .from('monitoramento_parque')
-                    .select('data_gravacao, total_base, total_sem_monitoramento')
-                    .eq('empresa', identifier)
-                    .gte('data_gravacao', startDate.toISOString())
-                    .order('data_gravacao', { ascending: true });
-            } else if (type === 'sla_fila') {
-                queryBuilder = supabase
-                    .from('sla_fila_rn')
-                    .select('created_at, dentro, fora')
-                    .eq('nome_fila', identifier)
-                    .gte('created_at', startDate.toISOString())
-                    .order('created_at', { ascending: true });
-            } else {
-                queryBuilder = supabase
-                    .from('sla_projetos_rn')
-                    .select('created_at, dentro, fora')
-                    .eq('nome_projeto', identifier)
-                    .gte('created_at', startDate.toISOString())
-                    .order('created_at', { ascending: true });
-            }
+            // Determine table and timestamp column
+            const table = type === 'mps' ? 'monitoramento_parque' :
+                type === 'sla_fila' ? 'sla_fila_rn' : 'sla_projetos_rn';
+            const timestampCol = type === 'mps' ? 'data_gravacao' : 'created_at';
+            const selectCols = type === 'mps'
+                ? 'data_gravacao, total_base, total_sem_monitoramento'
+                : 'created_at, dentro, fora';
+            const identifierCol = type === 'mps' ? 'empresa' :
+                type === 'sla_fila' ? 'nome_fila' : 'nome_projeto';
+
+            queryBuilder = supabase
+                .from(table)
+                .select(selectCols)
+                .eq(identifierCol, identifier)
+                .gte(timestampCol, startDate.toISOString())
+                .order(timestampCol, { ascending: true });
 
             const { data, error } = await queryBuilder;
 
@@ -58,51 +55,73 @@ export function useHistoryData({ type, identifier, isOpen }: UseHistoryDataProps
                 throw error;
             }
 
-            // Group by day to handle multiple snapshots per day (taking the last one or average? User said "snapshot do dia")
-            // We will take the latest entry for each day to represent the day's status
-            const dailyMap = new Map<string, HistoryDataPoint>();
+            if (!data || data.length === 0) return [];
 
-            data?.forEach((item) => {
+            // Process data mapping
+            const processedData: HistoryDataPoint[] = [];
+            const processedKeys = new Set<string>();
+
+            data.forEach((item) => {
                 const timestamp = type === 'mps' ? item.data_gravacao : item.created_at;
                 const dateObj = new Date(timestamp);
-                const dateKey = format(dateObj, 'yyyy-MM-dd');
+
+                // Key for grouping/uniqueness
+                let key = '';
+                let displayDate = '';
+
+                if (granularity === 'daily') {
+                    key = format(dateObj, 'yyyy-MM-dd');
+                    displayDate = format(dateObj, 'dd/MM');
+                } else {
+                    // Hourly: group by YYYY-MM-DD HH
+                    key = format(dateObj, 'yyyy-MM-dd HH');
+                    displayDate = format(dateObj, 'dd/MM HH') + 'h';
+                }
+
+                // If daily, we want one point per day (latest). Logic: map overwrites.
+                // If hourly, we want one point per hour (latest).
+                // Since data is ordered ASC, processing sequentially and storing in a Map (or filtering) works.
+                // But simplified: For daily, we want specific logic. For hourly, another.
 
                 let percentual = 0;
-
                 if (type === 'mps') {
-                    // MPS logic might need total_base and total_sem_monitoramento, but existing code uses percentage column?
-                    // Wait, existing types.ts says monitoramento_parque has no percentage column, but DonutChart receives percentage.
-                    // Let's re-read MonitoringGrid.tsx to see how it calculates percentage.
-                    // Ah, MonitoringGrid uses useMonitoringData hook. Let's check that if needed.
-                    // But checking types.ts again: monitoramento_parque columns are id, empresa, total_base, total_sem_monitoramento, data_gravacao.
-                    // So percentage must be calculated.
-                    const total = Number(item.total_base) || 1; // avoid division by zero
-                    // Logic commonly used: monitored = total_base - total_sem_monitoramento
-                    // percentual = (monitored / total_base) * 100
-                    // monitoring_parque columns are TEXT according to types.ts (string), valid validation needed.
                     const totalBase = parseInt(item.total_base as string) || 0;
                     const semMonitoramento = parseInt(item.total_sem_monitoramento as string) || 0;
                     const monitored = Math.max(0, totalBase - semMonitoramento);
                     percentual = totalBase > 0 ? (monitored / totalBase) * 100 : 0;
-
                 } else {
-                    // SLA logic: (dentro / (dentro + fora)) * 100
                     const dentro = Number(item.dentro);
                     const fora = Number(item.fora);
                     const total = dentro + fora;
                     percentual = total > 0 ? (dentro / total) * 100 : 0;
                 }
 
-                // Always update with the latest record for that day (since we ordered by date ASC)
-                // Or should we group? The query is ordered by date ASC so the last one for a day is the latest.
-                dailyMap.set(dateKey, {
-                    date: format(dateObj, 'dd/MM'),
-                    fullDate: dateKey,
+                processedData.push({
+                    date: displayDate,
+                    fullDate: timestamp, // Use full timestamp for accurate interactions
                     percentual: parseFloat(percentual.toFixed(2))
                 });
             });
 
-            return Array.from(dailyMap.values());
+            // If daily, we act like before: group by day, take latest.
+            if (granularity === 'daily') {
+                const dailyMap = new Map<string, HistoryDataPoint>();
+                processedData.forEach(p => {
+                    const dateKey = p.fullDate.split('T')[0];
+                    dailyMap.set(dateKey, { ...p, date: format(new Date(p.fullDate), 'dd/MM') });
+                });
+                return Array.from(dailyMap.values());
+            }
+
+            // If hourly, we might have multiple data points per hour. 
+            // Prompt says: "Granularidade: por hora... Cada ponto representa valor coletado naquela hora específica".
+            // If multiple, maybe average or latest? Let's take latest per hour to be consistent.
+            const hourlyMap = new Map<string, HistoryDataPoint>();
+            processedData.forEach(p => {
+                const hourKey = format(new Date(p.fullDate), 'yyyy-MM-dd HH');
+                hourlyMap.set(hourKey, p);
+            });
+            return Array.from(hourlyMap.values());
         },
         enabled: isOpen && !!identifier,
         staleTime: 1000 * 60 * 5, // 5 minutes

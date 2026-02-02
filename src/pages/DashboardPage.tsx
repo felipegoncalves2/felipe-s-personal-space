@@ -7,6 +7,7 @@ import { EmailSettings } from '@/components/settings/EmailSettings';
 import { SupabaseSettings } from '@/components/settings/SupabaseSettings';
 import { UsersTable } from '@/components/settings/UsersTable';
 import { PresentationSettings } from '@/components/settings/PresentationSettings';
+import { AlertSettings } from '@/components/settings/AlertSettings';
 import { useAuth } from '@/contexts/AuthContext';
 import { MonitoringTabType } from '@/types';
 
@@ -58,8 +59,9 @@ export default function DashboardPage() {
             </p>
           </div>
 
-          <Tabs defaultValue="email" className="space-y-6">
+          <Tabs defaultValue="alerts" className="space-y-6">
             <TabsList className="glass">
+              <TabsTrigger value="alerts">Alertas</TabsTrigger>
               <TabsTrigger value="email">Email (SMTP)</TabsTrigger>
               <TabsTrigger value="supabase">Supabase</TabsTrigger>
               <TabsTrigger value="users">Usuários</TabsTrigger>
@@ -67,6 +69,10 @@ export default function DashboardPage() {
             </TabsList>
 
             <div className="glass rounded-lg p-6">
+              <TabsContent value="alerts" className="m-0">
+                <AlertSettings />
+              </TabsContent>
+
               <TabsContent value="email" className="m-0">
                 <EmailSettings />
               </TabsContent>

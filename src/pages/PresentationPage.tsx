@@ -1,9 +1,10 @@
 import { useState, useEffect, useCallback, useMemo, useRef } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
-import { LogOut, Maximize, Minimize } from 'lucide-react';
+import { LogOut, Maximize, Minimize, Presentation, Grid3X3 } from 'lucide-react';
 import { AdaptiveDonutChart } from '@/components/presentation/AdaptiveDonutChart';
 import { AdaptiveSLADonutChart } from '@/components/presentation/AdaptiveSLADonutChart';
+import { StorytellingView } from '@/components/monitoring/StorytellingView';
 import { useMonitoringData } from '@/hooks/useMonitoringData';
 import { useSLAData } from '@/hooks/useSLAData';
 import { usePresentationSettings } from '@/hooks/usePresentationSettings';
@@ -24,21 +25,24 @@ function isSLAData(item: PresentationItem): item is SLAData {
 
 export default function PresentationPage() {
   const navigate = useNavigate();
-  const [searchParams] = useSearchParams();
+  const [searchParams, setSearchParams] = useSearchParams();
   const tabParam = searchParams.get('tab') as MonitoringTabType | null;
+  const viewParam = searchParams.get('view');
+
   const activeTab: MonitoringTabType = tabParam || 'mps';
-  
+  const showStoryMode = viewParam === 'story';
+
   // Get the monitoring type key for settings
   const monitoringType = tabToMonitoringType(activeTab);
 
   const { data: mpsData, isLoading: mpsLoading } = useMonitoringData();
   const { data: slaFilaData, isLoading: slaFilaLoading } = useSLAData('fila');
   const { data: slaProjetosData, isLoading: slaProjetosLoading } = useSLAData('projetos');
-  
+
   // Use settings specific to the current monitoring type
   const { settings } = usePresentationSettings(monitoringType);
   const viewport = useViewportSize();
-  
+
   const [currentPageIndex, setCurrentPageIndex] = useState(0);
   const [showControls, setShowControls] = useState(false);
   const [isFullscreen, setIsFullscreen] = useState(false);
@@ -104,11 +108,11 @@ export default function PresentationPage() {
   const pages = useMemo(() => {
     const result: PresentationItem[][] = [];
     const perPage = settings.companies_per_page;
-    
+
     for (let i = 0; i < filteredData.length; i += perPage) {
       result.push(filteredData.slice(i, i + perPage));
     }
-    
+
     return result.length > 0 ? result : [[]];
   }, [filteredData, settings.companies_per_page]);
 
@@ -135,14 +139,14 @@ export default function PresentationPage() {
 
   // Auto-advance carousel
   useEffect(() => {
-    if (pages.length <= 1) return;
+    if (pages.length <= 1 || showStoryMode) return; // Disable grid rotation in story mode
 
     const interval = setInterval(() => {
       setCurrentPageIndex((prev) => (prev + 1) % pages.length);
     }, settings.interval_seconds * 1000);
 
     return () => clearInterval(interval);
-  }, [pages.length, settings.interval_seconds]);
+  }, [pages.length, settings.interval_seconds, showStoryMode]);
 
   // Fullscreen management
   const enterFullscreen = useCallback(async () => {
@@ -200,6 +204,53 @@ export default function PresentationPage() {
     navigate('/');
   }, [exitFullscreen, navigate]);
 
+  const toggleViewMode = () => {
+    const newView = showStoryMode ? 'grid' : 'story';
+    setSearchParams({ tab: activeTab, view: newView });
+  };
+
+  if (showStoryMode) {
+    return (
+      <div ref={containerRef} className="min-h-screen bg-background" onMouseMove={handleMouseMove} onTouchStart={handleMouseMove}>
+        <StorytellingView />
+        {/* Overlay Controls for Story Mode */}
+        <AnimatePresence>
+          {showControls && (
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              transition={{ duration: 0.3 }}
+              className="fixed top-4 right-4 flex items-center gap-2 z-[60]"
+            >
+              <button
+                onClick={toggleViewMode}
+                className="flex items-center gap-2 px-4 py-2 bg-secondary/90 backdrop-blur-sm rounded-lg text-foreground hover:bg-secondary transition-colors cursor-pointer"
+              >
+                <Grid3X3 className="h-4 w-4" />
+                Modo Grade
+              </button>
+              <button
+                onClick={() => (isFullscreen ? exitFullscreen() : enterFullscreen())}
+                className="flex items-center gap-2 px-4 py-2 bg-secondary/90 backdrop-blur-sm rounded-lg text-foreground hover:bg-secondary transition-colors cursor-pointer"
+              >
+                {isFullscreen ? <Minimize className="h-4 w-4" /> : <Maximize className="h-4 w-4" />}
+                {isFullscreen ? 'Sair Fullscreen' : 'Fullscreen'}
+              </button>
+              <button
+                onClick={handleExit}
+                className="flex items-center gap-2 px-4 py-2 bg-destructive/90 backdrop-blur-sm rounded-lg text-destructive-foreground hover:bg-destructive transition-colors cursor-pointer"
+              >
+                <LogOut className="h-4 w-4" />
+                Sair
+              </button>
+            </motion.div>
+          )}
+        </AnimatePresence>
+      </div>
+    );
+  }
+
   if (isLoading) {
     return (
       <div className="min-h-screen bg-background flex items-center justify-center">
@@ -216,7 +267,7 @@ export default function PresentationPage() {
       onTouchStart={handleMouseMove}
     >
       {/* Header with logo and page indicator */}
-      <div 
+      <div
         className="flex items-center justify-between px-6 flex-shrink-0"
         style={{ height: HEADER_HEIGHT }}
       >
@@ -241,11 +292,10 @@ export default function PresentationPage() {
               {pages.map((_, index) => (
                 <div
                   key={index}
-                  className={`h-2 rounded-full transition-all duration-500 ${
-                    index === currentPageIndex
+                  className={`h-2 rounded-full transition-all duration-500 ${index === currentPageIndex
                       ? 'w-8 bg-primary'
                       : 'w-2 bg-muted-foreground/30'
-                  }`}
+                    }`}
                 />
               ))}
             </div>
@@ -262,7 +312,7 @@ export default function PresentationPage() {
       </div>
 
       {/* Main content with adaptive grid */}
-      <div 
+      <div
         className="flex-1 flex items-center justify-center overflow-hidden"
         style={{ padding: CONTENT_PADDING }}
       >
@@ -291,10 +341,10 @@ export default function PresentationPage() {
                     className="w-full h-full"
                     initial={{ opacity: 0, y: 10 }}
                     animate={{ opacity: 1, y: 0 }}
-                    transition={{ 
-                      duration: 0.4, 
+                    transition={{
+                      duration: 0.4,
                       delay: index * 0.03,
-                      ease: 'easeOut' 
+                      ease: 'easeOut'
                     }}
                   >
                     <AdaptiveSLADonutChart
@@ -318,10 +368,10 @@ export default function PresentationPage() {
                   className="w-full h-full"
                   initial={{ opacity: 0, y: 10 }}
                   animate={{ opacity: 1, y: 0 }}
-                  transition={{ 
-                    duration: 0.4, 
+                  transition={{
+                    duration: 0.4,
                     delay: index * 0.03,
-                    ease: 'easeOut' 
+                    ease: 'easeOut'
                   }}
                 >
                   <AdaptiveDonutChart
@@ -359,6 +409,13 @@ export default function PresentationPage() {
             className="fixed top-4 right-4 flex items-center gap-2 z-50"
           >
             <button
+              onClick={toggleViewMode}
+              className="flex items-center gap-2 px-4 py-2 bg-primary/90 backdrop-blur-sm rounded-lg text-primary-foreground hover:bg-primary transition-colors cursor-pointer shadow-lg"
+            >
+              <Presentation className="h-4 w-4" />
+              Modo Story
+            </button>
+            <button
               onClick={() => (isFullscreen ? exitFullscreen() : enterFullscreen())}
               className="flex items-center gap-2 px-4 py-2 bg-secondary/90 backdrop-blur-sm rounded-lg text-foreground hover:bg-secondary transition-colors cursor-pointer"
             >
@@ -375,14 +432,14 @@ export default function PresentationPage() {
               className="flex items-center gap-2 px-4 py-2 bg-destructive/90 backdrop-blur-sm rounded-lg text-destructive-foreground hover:bg-destructive transition-colors cursor-pointer"
             >
               <LogOut className="h-4 w-4" />
-              Sair da Apresentação
+              Sair
             </button>
           </motion.div>
         )}
       </AnimatePresence>
 
       {/* Footer with branding */}
-      <div 
+      <div
         className="px-6 flex items-center justify-between text-xs text-muted-foreground flex-shrink-0"
         style={{ height: FOOTER_HEIGHT }}
       >

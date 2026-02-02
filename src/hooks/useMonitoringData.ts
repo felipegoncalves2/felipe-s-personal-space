@@ -2,6 +2,8 @@ import { useState, useEffect, useCallback } from 'react';
 import { MonitoringData } from '@/types';
 import { supabase } from '@/integrations/supabase/client';
 import { calculateTrend, TrendDirection } from '@/components/common/TrendIndicator';
+import { detectAnomaly, calculateComparison } from '@/lib/statistics';
+import { subDays } from 'date-fns';
 
 const SUPABASE_URL = 'https://qromvrzqktrfexbnaoem.supabase.co';
 const SESSION_KEY = 'techub_session';
@@ -20,12 +22,12 @@ export function useMonitoringData() {
 
       const storedSession = localStorage.getItem(SESSION_KEY);
       let sessionToken = '';
-      
+
       if (storedSession) {
         try {
           const parsed = JSON.parse(storedSession);
           sessionToken = parsed.session_token;
-        } catch {}
+        } catch { }
       }
 
       const response = await fetch(`${SUPABASE_URL}/functions/v1/get-monitoring-data`, {
@@ -39,55 +41,88 @@ export function useMonitoringData() {
       const result = await response.json();
 
       if (result.success) {
-        // Fetch previous data for trend calculation
-        const { data: rawData, error: dbError } = await supabase
+        // Fetch history for stats calculation (last 7 days)
+        const startDate = subDays(new Date(), 8).toISOString(); // Fetch slightly more to be safe
+
+        const { data: rawHistory, error: dbError } = await supabase
           .from('monitoramento_parque')
           .select('*')
+          .gte('data_gravacao', startDate)
           .order('data_gravacao', { ascending: false });
 
         if (dbError) {
-          console.error('Error fetching trend data:', dbError);
-          setData(result.data.map((item: MonitoringData) => ({ ...item, trend: 'stable' as TrendDirection })));
+          console.error('Error fetching history data for stats:', dbError);
+          setData(result.data.map((item: MonitoringData) => ({
+            ...item,
+            trend: 'stable' as TrendDirection,
+            anomaly: false,
+            comparison: { diffPercent: 0, label: 'N/A' }
+          })));
         } else {
-          // Group by empresa and get latest + previous
-          const recordsByEmpresa = new Map<string, Array<typeof rawData[0]>>();
-          
-          for (const record of rawData || []) {
+          // Group by empresa
+          const recordsByEmpresa = new Map<string, Array<typeof rawHistory[0]>>();
+
+          for (const record of rawHistory || []) {
             if (!recordsByEmpresa.has(record.empresa)) {
               recordsByEmpresa.set(record.empresa, []);
             }
-            const records = recordsByEmpresa.get(record.empresa)!;
-            if (records.length < 2) {
-              records.push(record);
-            }
+            recordsByEmpresa.get(record.empresa)!.push(record);
           }
 
-          // Calculate trends for each empresa
-          const dataWithTrends: MonitoringData[] = result.data.map((item: MonitoringData) => {
-            const records = recordsByEmpresa.get(item.empresa);
+          // Calculate stats for each empresa
+          const dataWithStats: MonitoringData[] = result.data.map((item: MonitoringData) => {
+            const records = recordsByEmpresa.get(item.empresa) || [];
+
+            // Calculate current percentage
+            const currentBase = parseInt(records[0]?.total_base) || item.total_base || 0;
+            const currentSem = parseInt(records[0]?.total_sem_monitoramento) || item.total_sem_monitoramento || 0;
+            const currentMonitoradas = currentBase - currentSem;
+            const currentPercentual = currentBase > 0 ? (currentMonitoradas / currentBase) * 100 : item.percentual;
+
+            // Trend calculation (vs previous record)
             let trend: TrendDirection = 'stable';
-            
-            if (records && records.length >= 2) {
-              const current = records[0];
-              const previous = records[1];
-              
-              const currentBase = parseInt(current.total_base) || 0;
-              const currentSem = parseInt(current.total_sem_monitoramento) || 0;
-              const currentMonitoradas = currentBase - currentSem;
-              const currentPercentual = currentBase > 0 ? (currentMonitoradas / currentBase) * 100 : 0;
-              
-              const prevBase = parseInt(previous.total_base) || 0;
-              const prevSem = parseInt(previous.total_sem_monitoramento) || 0;
+            if (records.length >= 2) {
+              const prevRecord = records[1];
+              const prevBase = parseInt(prevRecord.total_base) || 0;
+              const prevSem = parseInt(prevRecord.total_sem_monitoramento) || 0;
               const prevMonitoradas = prevBase - prevSem;
               const prevPercentual = prevBase > 0 ? (prevMonitoradas / prevBase) * 100 : 0;
-              
               trend = calculateTrend(currentPercentual, prevPercentual);
             }
-            
-            return { ...item, trend };
+
+            // Anomaly & Comparison (vs 7 days history)
+            // Extract history values as numbers
+            const historyValues = records.map(r => {
+              const b = parseInt(r.total_base) || 0;
+              const s = parseInt(r.total_sem_monitoramento) || 0;
+              return b > 0 ? ((b - s) / b) * 100 : 0;
+            });
+
+            // Exclude current value from history for "past" comparison if it's in the list
+            // records[0] might be the same as current item if cloud function and table are consistent
+            // We assume historyValues includes the latest db record which matches 'item'. 
+            // For anomaly detection, we compare 'currentPercentual' vs 'historyValues (excluding current)'.
+            // However, usually history stats are built on *prior* days. 
+            // The prompt says: "Média móvel dos últimos 7 dias".
+
+            // Let's filter history to exclude today/current moment to avoid self-bias if needed,
+            // or just use the full window. Standard moving average usually includes or excludes current depending on definition.
+            // Prompt: "Calcular média móvel dos últimos 7 dias" -> usually implies window *before* current.
+            // Let's take historyValues.slice(1) to avoid current record.
+            const pastValues = historyValues.slice(1);
+
+            const isAnomaly = detectAnomaly(pastValues, currentPercentual);
+            const comparison = calculateComparison(currentPercentual, pastValues);
+
+            return {
+              ...item,
+              trend,
+              anomaly: isAnomaly,
+              comparison
+            };
           });
 
-          setData(dataWithTrends);
+          setData(dataWithStats);
         }
         setLastUpdated(new Date());
       } else {

@@ -194,11 +194,27 @@ export function MonitoringGrid() {
 
         {/* Actions */}
         <div className="flex items-center gap-3">
-          {lastUpdated && (
-            <span className="text-xs text-muted-foreground">
-              Atualizado: {lastUpdated.toLocaleTimeString('pt-BR')}
-            </span>
-          )}
+          <div className="flex items-center gap-2">
+            {lastUpdated && (
+              <>
+                <div className={`flex items-center gap-1.5 px-2 py-1 rounded-full text-xs font-medium border ${new Date().getTime() - lastUpdated.getTime() < 1000 * 60 * 10
+                    ? 'bg-green-500/10 text-green-500 border-green-500/20'
+                    : new Date().getTime() - lastUpdated.getTime() < 1000 * 60 * 60
+                      ? 'bg-yellow-500/10 text-yellow-500 border-yellow-500/20'
+                      : 'bg-red-500/10 text-red-500 border-red-500/20'
+                  }`}>
+                  <div className={`w-2 h-2 rounded-full ${new Date().getTime() - lastUpdated.getTime() < 1000 * 60 * 10 ? 'bg-green-500' :
+                      new Date().getTime() - lastUpdated.getTime() < 1000 * 60 * 60 ? 'bg-yellow-500' : 'bg-red-500'
+                    }`} />
+                  {new Date().getTime() - lastUpdated.getTime() < 1000 * 60 * 10 ? 'Dados Recentes' :
+                    new Date().getTime() - lastUpdated.getTime() < 1000 * 60 * 60 ? 'Dados < 1h' : 'Dados Antigos'}
+                </div>
+                <span className="text-xs text-muted-foreground hidden sm:inline-block">
+                  {lastUpdated.toLocaleTimeString('pt-BR')}
+                </span>
+              </>
+            )}
+          </div>
           <Button
             variant="outline"
             size="sm"
@@ -242,6 +258,8 @@ export function MonitoringGrid() {
               dataGravacao={item.data_gravacao}
               delay={index * 0.05}
               trend={item.trend}
+              anomaly={item.anomaly}
+              comparison={item.comparison}
               onClick={() => setSelectedItem({ empresa: item.empresa })}
             />
           ))}
