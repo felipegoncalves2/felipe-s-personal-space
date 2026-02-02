@@ -122,12 +122,12 @@ export function useEmailSettings() {
 
             // Fetch SMTP connection from Supabase
             // Order by updated_at desc to get the latest config if multiple exist
-            const { data, error } = await supabase
-                .from('smtp_settings')
+            const { data, error } = await (supabase
+                .from('smtp_settings' as any)
                 .select('*')
                 .order('updated_at', { ascending: false })
                 .limit(1)
-                .maybeSingle();
+                .maybeSingle());
 
             console.log('[useEmailSettings] Fetched data:', data, 'Error:', error);
 
@@ -172,22 +172,22 @@ export function useEmailSettings() {
             // Save SMTP to Supabase
             let error;
             if (settings.id) {
-                const { error: updateError } = await supabase
-                    .from('smtp_settings')
+                const { error: updateError } = await (supabase
+                    .from('smtp_settings' as any)
                     .update(rowData)
-                    .eq('id', settings.id);
+                    .eq('id', settings.id));
                 error = updateError;
             } else {
-                const { data, error: insertError } = await supabase
-                    .from('smtp_settings')
+                const result = await (supabase
+                    .from('smtp_settings' as any)
                     .insert([rowData])
                     .select()
-                    .single();
-                if (data) {
-                    setSettings(prev => ({ ...prev, id: data.id }));
-                    newSettings.id = data.id; // ensure local update has ID
+                    .single()) as { data: any; error: any };
+                if (result.data) {
+                    setSettings(prev => ({ ...prev, id: String(result.data.id) }));
+                    newSettings.id = String(result.data.id); // ensure local update has ID
                 }
-                error = insertError;
+                error = result.error;
             }
 
             if (error) {

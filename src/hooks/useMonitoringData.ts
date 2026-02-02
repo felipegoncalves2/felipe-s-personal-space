@@ -91,25 +91,18 @@ export function useMonitoringData() {
             }
 
             // Anomaly & Comparison (vs 7 days history)
-            // Extract history values as numbers
-            const historyValues = records.map(r => {
+            // Extract history as DataPoint[] for statistics functions
+            const historyDataPoints = records.map(r => {
               const b = parseInt(r.total_base) || 0;
               const s = parseInt(r.total_sem_monitoramento) || 0;
-              return b > 0 ? ((b - s) / b) * 100 : 0;
+              return {
+                date: r.data_gravacao,
+                value: b > 0 ? ((b - s) / b) * 100 : 0
+              };
             });
 
-            // Exclude current value from history for "past" comparison if it's in the list
-            // records[0] might be the same as current item if cloud function and table are consistent
-            // We assume historyValues includes the latest db record which matches 'item'. 
-            // For anomaly detection, we compare 'currentPercentual' vs 'historyValues (excluding current)'.
-            // However, usually history stats are built on *prior* days. 
-            // The prompt says: "Média móvel dos últimos 7 dias".
-
-            // Let's filter history to exclude today/current moment to avoid self-bias if needed,
-            // or just use the full window. Standard moving average usually includes or excludes current depending on definition.
-            // Prompt: "Calcular média móvel dos últimos 7 dias" -> usually implies window *before* current.
-            // Let's take historyValues.slice(1) to avoid current record.
-            const pastValues = historyValues.slice(1);
+            // Exclude current value from history for "past" comparison
+            const pastValues = historyDataPoints.slice(1);
 
             const isAnomaly = detectAnomaly(pastValues, currentPercentual);
             const comparison = calculateComparison(currentPercentual, pastValues);

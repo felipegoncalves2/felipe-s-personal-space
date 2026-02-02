@@ -24,30 +24,30 @@ export function useComments({ type, identifier }: UseCommentsProps) {
     const { data: comments, isLoading } = useQuery({
         queryKey: ['comments', type, identifier],
         queryFn: async () => {
-            const { data, error } = await supabase
-                .from('monitoring_comments')
+            const { data, error } = await (supabase
+                .from('monitoring_comments' as any)
                 .select('*')
                 .eq('tipo_monitoramento', type)
                 .eq('identificador_item', identifier)
-                .order('timestamp_coleta', { ascending: true });
+                .order('timestamp_coleta', { ascending: true }));
 
             if (error) {
                 // Fail silently if table doesn't exist to avoid breaking the UI
                 console.warn('Comments fetch failed:', error);
                 return [];
             }
-            return data as Comment[];
+            return data as unknown as Comment[];
         },
         enabled: !!type && !!identifier,
     });
 
     const addComment = useMutation({
         mutationFn: async (newComment: Omit<Comment, 'id' | 'created_at'>) => {
-            const { data, error } = await supabase
-                .from('monitoring_comments')
-                .insert([newComment])
+            const { data, error } = await (supabase
+                .from('monitoring_comments' as any)
+                .insert([newComment as any])
                 .select()
-                .single();
+                .single());
 
             if (error) throw error;
             return data;
