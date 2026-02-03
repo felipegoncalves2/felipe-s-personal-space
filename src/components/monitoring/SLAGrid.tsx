@@ -273,6 +273,7 @@ export function SLAGrid({ type }: SLAGridProps) {
               createdAt={item.created_at}
               delay={index * 0.05}
               trend={item.trend}
+              variation={item.variation}
               thresholdExcellent={settings.threshold_excellent ?? 98}
               thresholdAttention={settings.threshold_attention ?? 80}
               onClick={() => setSelectedItem({ nome: item.nome })}

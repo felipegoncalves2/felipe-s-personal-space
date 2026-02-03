@@ -10,6 +10,7 @@ interface AdaptiveDonutChartProps {
   dataGravacao: string;
   scale: number; // 0-1 scale factor based on viewport and density
   trend?: TrendDirection;
+  variation?: number;
   thresholdExcellent?: number;
   thresholdAttention?: number;
 }
@@ -22,6 +23,7 @@ export function AdaptiveDonutChart({
   dataGravacao,
   scale,
   trend = 'stable',
+  variation,
   thresholdExcellent = 98,
   thresholdAttention = 80,
 }: AdaptiveDonutChartProps) {
@@ -93,7 +95,7 @@ export function AdaptiveDonutChart({
     >
       {/* Trend Indicator */}
       <div className="absolute" style={{ top: padding * 0.5, right: padding * 0.5 }}>
-        <TrendIndicator trend={trend} size={trendSize} />
+        <TrendIndicator trend={trend} variation={variation} size={trendSize} />
       </div>
 
       {/* Company Name */}

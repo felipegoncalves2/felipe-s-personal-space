@@ -14,6 +14,7 @@ interface DonutChartProps {
   dataGravacao: string;
   delay?: number;
   trend?: TrendDirection;
+  variation?: number;
   anomaly?: boolean;
   comparison?: {
     diffPercent: number;
@@ -34,6 +35,7 @@ export function DonutChart({
   dataGravacao,
   delay = 0,
   trend = 'stable',
+  variation,
   anomaly,
   comparison,
   onClick,
@@ -89,7 +91,7 @@ export function DonutChart({
     >
       {/* Alerts & Trend */}
       <div className="absolute top-3 right-3 flex flex-col gap-1 items-end">
-        <TrendIndicator trend={trend} size={16} />
+        <TrendIndicator trend={trend} variation={variation} size={16} />
       </div>
 
       <div className="flex flex-col items-center w-full">

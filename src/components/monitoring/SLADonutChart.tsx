@@ -13,6 +13,7 @@ interface SLADonutChartProps {
   createdAt: string;
   delay?: number;
   trend?: TrendDirection;
+  variation?: number;
   onClick?: () => void;
   thresholdExcellent?: number;
   thresholdAttention?: number;
@@ -29,6 +30,7 @@ export function SLADonutChart({
   createdAt,
   delay = 0,
   trend = 'stable',
+  variation,
   onClick,
   thresholdExcellent = 98,
   thresholdAttention = 80,
@@ -81,7 +83,7 @@ export function SLADonutChart({
     >
       {/* Trend Indicator */}
       <div className="absolute top-3 right-3">
-        <TrendIndicator trend={trend} size={16} />
+        <TrendIndicator trend={trend} variation={variation} size={16} />
       </div>
 
       <div className="flex flex-col items-center">

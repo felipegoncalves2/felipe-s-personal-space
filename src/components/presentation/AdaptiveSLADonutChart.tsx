@@ -11,6 +11,7 @@ interface AdaptiveSLADonutChartProps {
   createdAt: string;
   scale: number;
   trend?: TrendDirection;
+  variation?: number;
   thresholdExcellent?: number;
   thresholdAttention?: number;
 }
@@ -24,6 +25,7 @@ export function AdaptiveSLADonutChart({
   createdAt,
   scale,
   trend = 'stable',
+  variation,
   thresholdExcellent = 98,
   thresholdAttention = 80,
 }: AdaptiveSLADonutChartProps) {
@@ -90,7 +92,7 @@ export function AdaptiveSLADonutChart({
     >
       {/* Trend Indicator */}
       <div className="absolute" style={{ top: padding * 0.5, right: padding * 0.5 }}>
-        <TrendIndicator trend={trend} size={trendSize} />
+        <TrendIndicator trend={trend} variation={variation} size={trendSize} />
       </div>
 
       {/* Name */}

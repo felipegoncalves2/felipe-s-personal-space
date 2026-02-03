@@ -68,15 +68,19 @@ export function useSLAData(type: SLAType) {
         const total = dentro + fora;
         const percentual = total > 0 ? Number(((dentro / total) * 100).toFixed(2)) : 0;
 
-        // LOCAL DETECTION for persistence
-        let localTrend: TrendDirection = 'stable';
+        // Calculate variation
+        let variation = 0;
+        let prevPercentual = null;
         if (previous) {
           const prevDentro = previous.dentro || 0;
           const prevFora = previous.fora || 0;
           const prevTotal = prevDentro + prevFora;
-          const prevPercentual = prevTotal > 0 ? (prevDentro / prevTotal) * 100 : 0;
-          localTrend = calculateTrend(percentual, prevPercentual);
+          prevPercentual = prevTotal > 0 ? (prevDentro / prevTotal) * 100 : 0;
+          variation = percentual - prevPercentual;
         }
+
+        // LOCAL DETECTION for persistence
+        let localTrend = calculateTrend(percentual, prevPercentual);
 
         // PERSIST new alerts
         if (localTrend === 'down') {
@@ -111,8 +115,8 @@ export function useSLAData(type: SLAType) {
           fora,
           total,
           percentual,
-          trend: itemAlerts.some(a => a.alert_type === 'tendencia') ? 'down' : 'stable',
-          // Note: SLA data doesn't currently use the 'anomaly' flag in the UI, but we could add it
+          trend: itemAlerts.some(a => a.alert_type === 'tendencia') ? 'down' : (variation > 0 ? 'up' : 'stable'),
+          variation,
           created_at: current.created_at
         };
       });

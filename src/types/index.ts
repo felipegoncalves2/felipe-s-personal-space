@@ -46,6 +46,7 @@ export interface MonitoringData {
     diffPercent: number;
     label: string;
   };
+  variation?: number;
 }
 
 export interface SLAData {
@@ -57,6 +58,7 @@ export interface SLAData {
   percentual: number;
   created_at: string;
   trend?: TrendDirection;
+  variation?: number;
 }
 
 export interface UserListItem {

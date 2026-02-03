@@ -43,7 +43,7 @@ export function StorytellingView() {
             A saúde geral é ${avg >= 95 ? 'Excelente' : avg >= 85 ? 'Boa' : 'Crítica'}, com média de ${avg.toFixed(1)}%.
             Temos ${green} empresas operando dentro do ideal, enquanto ${red} requerem atenção imediata.
             ${critical.length > 0 ? `Destaque negativo para ${critical[0].empresa} com ${critical[0].percentual.toFixed(1)}%.` : ''}
-            ${improvements.length > 0 ? `Melhoria notável em ${improvements[0].empresa} (+${improvements[0].comparison?.diffPercent?.toFixed(1)}%).` : ''}
+            ${improvements.length > 0 && improvements[0].variation ? `Melhoria notável em ${improvements[0].empresa} (+${improvements[0].variation.toFixed(1)}%).` : ''}
         `;
 
         return [
@@ -100,14 +100,14 @@ export function StorytellingView() {
                                         </div>
                                     </div>
                                     <div className="text-right">
-                                        <div className="text-3xl font-bold text-red-500">{item.percentual}%</div>
-                                        <div className="text-sm text-muted-foreground">
-                                            {item.comparison?.diffPercent ? (
-                                                <span className="flex items-center justify-end gap-1">
+                                        <div className="text-3xl font-bold text-red-500">{item.percentual.toFixed(1)}%</div>
+                                        <div className="text-sm text-muted-foreground font-medium">
+                                            {item.variation !== undefined && item.variation !== 0 ? (
+                                                <span className="flex items-center justify-end gap-1 text-red-400">
                                                     <TrendingDown className="h-4 w-4" />
-                                                    {item.comparison.diffPercent.toFixed(1)}% vs média
+                                                    {item.variation.toFixed(1)}%
                                                 </span>
-                                            ) : 'Sem histórico suficiente'}
+                                            ) : 'Estável'}
                                         </div>
                                     </div>
                                 </div>
@@ -136,14 +136,19 @@ export function StorytellingView() {
                                         </div>
                                     </div>
                                     <div className="text-right">
-                                        <div className="text-3xl font-bold text-green-500">{item.percentual}%</div>
-                                        <div className="text-sm text-muted-foreground">
-                                            {item.comparison?.diffPercent ? (
+                                        <div className="text-3xl font-bold text-green-500">{item.percentual.toFixed(1)}%</div>
+                                        <div className="text-sm text-muted-foreground font-medium">
+                                            {item.variation !== undefined && item.variation > 0 ? (
                                                 <span className="flex items-center justify-end gap-1 text-green-400">
                                                     <TrendingUp className="h-4 w-4" />
-                                                    +{item.comparison.diffPercent.toFixed(1)}% vs média
+                                                    +{item.variation.toFixed(1)}%
                                                 </span>
-                                            ) : ''}
+                                            ) : item.variation !== undefined && item.variation < 0 ? (
+                                                <span className="flex items-center justify-end gap-1 text-red-400">
+                                                    <TrendingDown className="h-4 w-4" />
+                                                    {item.variation.toFixed(1)}%
+                                                </span>
+                                            ) : 'Estável'}
                                         </div>
                                     </div>
                                 </div>

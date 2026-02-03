@@ -411,6 +411,7 @@ export default function PresentationPage() {
                       createdAt={item.created_at}
                       scale={layout.scale}
                       trend={item.trend}
+                      variation={item.variation}
                       thresholdExcellent={settings.threshold_excellent ?? 98}
                       thresholdAttention={settings.threshold_attention ?? 80}
                     />
@@ -439,6 +440,7 @@ export default function PresentationPage() {
                     dataGravacao={mpsItem.data_gravacao}
                     scale={layout.scale}
                     trend={mpsItem.trend}
+                    variation={mpsItem.variation}
                     thresholdExcellent={settings.threshold_excellent ?? 98}
                     thresholdAttention={settings.threshold_attention ?? 80}
                   />

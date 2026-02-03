@@ -94,9 +94,20 @@ export function useMonitoringData() {
         const currentSem = parseInt(records[0]?.total_sem_monitoramento) || item.total_sem_monitoramento || 0;
         const currentPercentual = currentBase > 0 ? ((currentBase - currentSem) / currentBase) * 100 : item.percentual;
 
+        // Previous value for variation calculation
+        const prevRecord = records[1];
+        let previousPercentual = null;
+        if (prevRecord) {
+          const prevBase = parseInt(prevRecord.total_base) || 0;
+          const prevSem = parseInt(prevRecord.total_sem_monitoramento) || 0;
+          previousPercentual = prevBase > 0 ? ((prevBase - prevSem) / prevBase) * 100 : 0;
+        }
+
+        const variation = previousPercentual !== null ? currentPercentual - previousPercentual : 0;
+
         // LOCAL DETECTION for persistence
         const pastPoints = historyPoints.slice(1);
-        const localTrend = calculateTrend(currentPercentual, pastPoints.length > 0 ? pastPoints[0].value : null);
+        const localTrend = calculateTrend(currentPercentual, previousPercentual);
         const isAnomaly = detectAnomaly(pastPoints, currentPercentual);
         const comparison = calculateComparison(currentPercentual, pastPoints);
 
@@ -140,9 +151,10 @@ export function useMonitoringData() {
         return {
           ...item,
           percentual: currentPercentual,
-          trend: itemAlerts.some(a => a.alert_type === 'tendencia') ? 'down' : 'stable',
+          trend: itemAlerts.some(a => a.alert_type === 'tendencia') ? 'down' : (variation > 0 ? 'up' : 'stable'),
           anomaly: itemAlerts.some(a => a.alert_type === 'anomalia'),
-          comparison
+          comparison,
+          variation
         };
       });
 

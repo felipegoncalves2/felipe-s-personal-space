@@ -280,6 +280,7 @@ export function MonitoringGrid() {
               dataGravacao={item.data_gravacao}
               delay={index * 0.05}
               trend={item.trend}
+              variation={item.variation}
               anomaly={item.anomaly}
               comparison={item.comparison}
               thresholdExcellent={settings.threshold_excellent ?? 98}
