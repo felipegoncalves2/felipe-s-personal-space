@@ -356,14 +356,7 @@ export default function PresentationPage() {
           className="w-full flex items-center justify-center bg-secondary/30 border-b border-border/50 backdrop-blur-sm z-10"
           style={{ height: KPI_BAR_HEIGHT }}
         >
-<<<<<<< Updated upstream
-          <div className="flex items-center justify-center px-12 py-4 rounded-full bg-background/50 border border-border/30 shadow-lg">
-=======
           <div className="flex items-center gap-8 px-12 py-4 rounded-full bg-background/50 border border-border/30 shadow-lg">
-<<<<<<< Updated upstream
->>>>>>> Stashed changes
-=======
->>>>>>> Stashed changes
             <span className={`text-8xl font-extrabold ${averageKPI >= (settings.threshold_excellent ?? 98) ? 'text-chart-green' :
               averageKPI >= (settings.threshold_attention ?? 80) ? 'text-chart-yellow' : 'text-chart-red'
               }`}>
