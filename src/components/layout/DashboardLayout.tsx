@@ -15,8 +15,8 @@ import techubLogo from '@/assets/logo_techub.jpg';
 
 interface DashboardLayoutProps {
   children: ReactNode;
-  activeTab: 'monitoring' | 'reports' | 'alerts' | 'settings';
-  onTabChange: (tab: 'monitoring' | 'reports' | 'alerts' | 'settings') => void;
+  activeTab: 'monitoring' | 'analysis' | 'reports' | 'alerts' | 'settings';
+  onTabChange: (tab: 'monitoring' | 'analysis' | 'reports' | 'alerts' | 'settings') => void;
 }
 
 export function DashboardLayout({ children, activeTab, onTabChange }: DashboardLayoutProps) {
@@ -52,6 +52,16 @@ export function DashboardLayout({ children, activeTab, onTabChange }: DashboardL
               >
                 <LayoutDashboard className="h-4 w-4" />
                 <span className="hidden sm:inline">Monitoramento</span>
+              </Button>
+
+              <Button
+                variant={activeTab === 'analysis' ? 'secondary' : 'ghost'}
+                size="sm"
+                onClick={() => onTabChange('analysis')}
+                className="gap-2"
+              >
+                <BarChart2 className="h-4 w-4" />
+                <span className="hidden sm:inline">Análise de SLA</span>
               </Button>
 
               <Button

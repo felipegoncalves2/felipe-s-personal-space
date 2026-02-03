@@ -13,10 +13,11 @@ import { useAuth } from '@/contexts/AuthContext';
 import { MonitoringTabType } from '@/types';
 import { ReportsPage } from './ReportsPage';
 import { AlertsManagement } from '@/components/alerts/AlertsManagement';
+import { SLAAnalysis } from '@/components/sla-analysis/SLAAnalysis';
 
 export default function DashboardPage() {
   const { isAdmin, hasPermission } = useAuth();
-  const [activeTab, setActiveTab] = useState<'monitoring' | 'reports' | 'alerts' | 'settings'>('monitoring');
+  const [activeTab, setActiveTab] = useState<'monitoring' | 'analysis' | 'reports' | 'alerts' | 'settings'>('monitoring');
   const [monitoringTab, setMonitoringTab] = useState<MonitoringTabType>('mps');
 
   return (
@@ -57,6 +58,10 @@ export default function DashboardPage() {
             )}
           </Tabs>
         </div>
+      )}
+
+      {activeTab === 'analysis' && hasPermission('monitoring.view_sla_fila') && (
+        <SLAAnalysis />
       )}
 
       {activeTab === 'reports' && hasPermission('reports.view') && (
