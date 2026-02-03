@@ -8,7 +8,7 @@ interface AdaptiveDonutChartProps {
   totalBase: number;
   semMonitoramento: number;
   dataGravacao: string;
-  scale: number; // 0-1 scale factor based on viewport and density
+  scale: number; // 0-1 scale factor based on viewport and densitty
   trend?: TrendDirection;
   variation?: number;
   thresholdExcellent?: number;
