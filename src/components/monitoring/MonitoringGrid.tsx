@@ -75,13 +75,22 @@ export function MonitoringGrid() {
     setCurrentPage(Math.max(1, Math.min(page, totalPages)));
   };
 
-  const statusCounts = useMemo(() => {
+  const summaryStats = useMemo(() => {
+    const thresholdExcellent = settings.threshold_excellent ?? 98;
+    const thresholdAttention = settings.threshold_attention ?? 80;
+
+    const totalBase = data.reduce((acc, d) => acc + (d.total_base || 0), 0);
+    const totalSemMonitoramento = data.reduce((acc, d) => acc + (d.total_sem_monitoramento || 0), 0);
+    const totalMonitorado = totalBase - totalSemMonitoramento;
+    const averagePercentual = totalBase > 0 ? (totalMonitorado / totalBase) * 100 : 0;
+
     return {
-      green: data.filter((d) => d.percentual >= 98).length,
-      yellow: data.filter((d) => d.percentual >= 80 && d.percentual < 98).length,
-      red: data.filter((d) => d.percentual < 80).length,
+      green: data.filter((d) => d.percentual >= thresholdExcellent).length,
+      yellow: data.filter((d) => d.percentual >= thresholdAttention && d.percentual < thresholdExcellent).length,
+      red: data.filter((d) => d.percentual < thresholdAttention).length,
+      average: averagePercentual
     };
-  }, [data]);
+  }, [data, settings.threshold_excellent, settings.threshold_attention]);
 
   if (error) {
     return (
@@ -98,14 +107,14 @@ export function MonitoringGrid() {
   return (
     <div className="space-y-6">
       {/* Status Summary */}
-      <div className="grid grid-cols-3 gap-4">
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
-          className="glass rounded-lg p-4 text-center"
+          className="glass rounded-lg p-4 text-center border-l-4 border-l-primary"
         >
-          <div className="text-2xl font-bold text-chart-green">{statusCounts.green}</div>
-          <div className="text-xs text-muted-foreground mt-1">Excelente (≥98%)</div>
+          <div className="text-2xl font-bold text-primary">{summaryStats.average.toFixed(2)}%</div>
+          <div className="text-xs text-muted-foreground mt-1">Média Geral</div>
         </motion.div>
         <motion.div
           initial={{ opacity: 0, y: 20 }}
@@ -113,8 +122,8 @@ export function MonitoringGrid() {
           transition={{ delay: 0.1 }}
           className="glass rounded-lg p-4 text-center"
         >
-          <div className="text-2xl font-bold text-chart-yellow">{statusCounts.yellow}</div>
-          <div className="text-xs text-muted-foreground mt-1">Atenção (80-97.9%)</div>
+          <div className="text-2xl font-bold text-chart-green">{summaryStats.green}</div>
+          <div className="text-xs text-muted-foreground mt-1">Excelente (≥{settings.threshold_excellent ?? 98}%)</div>
         </motion.div>
         <motion.div
           initial={{ opacity: 0, y: 20 }}
@@ -122,8 +131,17 @@ export function MonitoringGrid() {
           transition={{ delay: 0.2 }}
           className="glass rounded-lg p-4 text-center"
         >
-          <div className="text-2xl font-bold text-chart-red">{statusCounts.red}</div>
-          <div className="text-xs text-muted-foreground mt-1">Crítico (&lt;80%)</div>
+          <div className="text-2xl font-bold text-chart-yellow">{summaryStats.yellow}</div>
+          <div className="text-xs text-muted-foreground mt-1">Atenção ({settings.threshold_attention ?? 80}-{settings.threshold_excellent ?? 97.9}%)</div>
+        </motion.div>
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.3 }}
+          className="glass rounded-lg p-4 text-center"
+        >
+          <div className="text-2xl font-bold text-chart-red">{summaryStats.red}</div>
+          <div className="text-xs text-muted-foreground mt-1">Crítico (&lt;{settings.threshold_attention ?? 80}%)</div>
         </motion.div>
       </div>
 

@@ -113,3 +113,22 @@ export function monitoringTypeToTab(type: MonitoringTypeKey): MonitoringTabType 
     default: return 'mps';
   }
 }
+
+export type AlertSeverity = 'info' | 'warning' | 'critical';
+export type AlertType = 'limite' | 'anomalia' | 'tendencia';
+
+export interface MonitoringAlert {
+  id: string;
+  tipo_monitoramento: 'mps' | 'sla_fila' | 'sla_projeto';
+  identificador_item: string;
+  alert_type: AlertType;
+  severity: AlertSeverity;
+  percentual_atual: number;
+  contexto?: any;
+  detected_at: string;
+  tratado: boolean;
+  tratado_em?: string;
+  tratado_por?: number;
+  comentario_tratamento?: string;
+  created_at: string;
+}

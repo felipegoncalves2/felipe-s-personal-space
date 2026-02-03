@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
-import { Search, RefreshCw, Loader2, CheckCircle, XCircle, ChevronLeft, ChevronRight } from 'lucide-react';
+import { Search, RefreshCw, Loader2, CheckCircle, XCircle, ChevronLeft, ChevronRight, UserPlus } from 'lucide-react';
 import { useUsers } from '@/hooks/useUsers';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
@@ -20,11 +20,13 @@ import {
   TableRow,
 } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
+import { CreateUserModal } from './CreateUserModal';
 
 export function UsersTable() {
   const { users, pagination, isLoading, error, fetchUsers } = useUsers();
   const [searchTerm, setSearchTerm] = useState('');
   const [perPage, setPerPage] = useState(10);
+  const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
 
   useEffect(() => {
     fetchUsers(1, perPage, '');
@@ -104,6 +106,16 @@ export function UsersTable() {
           </Select>
 
           <Button
+            variant="default"
+            size="sm"
+            onClick={() => setIsCreateModalOpen(true)}
+            className="bg-primary hover:bg-primary/90"
+          >
+            <UserPlus className="mr-2 h-4 w-4" />
+            Novo Usuário
+          </Button>
+
+          <Button
             variant="outline"
             size="sm"
             onClick={handleRefresh}
@@ -114,6 +126,12 @@ export function UsersTable() {
           </Button>
         </div>
       </div>
+
+      <CreateUserModal
+        isOpen={isCreateModalOpen}
+        onClose={() => setIsCreateModalOpen(false)}
+        onSuccess={handleRefresh}
+      />
 
       {/* Table */}
       <div className="glass rounded-lg overflow-hidden">

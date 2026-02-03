@@ -12,7 +12,12 @@ interface UserRow {
   email: string;
   department: string | null;
   is_active: boolean;
-  roles: { name: string; description: string | null } | null;
+  role_id: number;
+  roles: {
+    name: string;
+    description: string | null;
+    is_active: boolean;
+  } | null;
 }
 
 Deno.serve(async (req) => {
@@ -32,7 +37,7 @@ Deno.serve(async (req) => {
 
     const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
     const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
-    
+
     const supabase = createClient(supabaseUrl, supabaseServiceKey);
 
     // Find session
@@ -74,7 +79,8 @@ Deno.serve(async (req) => {
         email,
         department,
         is_active,
-        roles(name, description)
+        role_id,
+        roles(name, description, is_active)
       `)
       .eq('id', session.user_id)
       .eq('is_active', true)
@@ -87,6 +93,22 @@ Deno.serve(async (req) => {
       );
     }
 
+    if (!user.roles?.is_active) {
+      return new Response(
+        JSON.stringify({ valid: false, error: 'Perfil inativo' }),
+        { status: 403, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
+
+    // Get permissions for the role
+    const { data: permissionsData, error: permissionsError } = await supabase
+      .from('role_permissions')
+      .select('permission_key')
+      .eq('role_id', user.role_id)
+      .eq('enabled', true);
+
+    const permissions = permissionsData?.map(p => p.permission_key) || [];
+
     const userData = {
       id: user.id,
       full_name: user.full_name,
@@ -95,6 +117,7 @@ Deno.serve(async (req) => {
       department: user.department,
       role: user.roles?.name || 'USUARIO',
       role_description: user.roles?.description,
+      permissions: permissions,
     };
 
     return new Response(

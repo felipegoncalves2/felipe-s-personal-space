@@ -110,19 +110,33 @@ export default function PresentationPage() {
     });
   }, [rawData, settings]);
 
-  // Calculate Average KPI (Improvement 2)
+  // Calculate Average KPI (Improved with weighted average)
   const averageKPI = useMemo(() => {
     if (!filteredData.length) return null;
 
-    // Only for MPS and SLA Fila as requested
-    if (activeTab === 'sla-projetos') return null;
+    // Calculate totals based on item type
+    if (activeTab === 'mps') {
+      const { totalBase, totalSemMonitoramento } = filteredData.reduce((acc, item) => {
+        const mps = item as MonitoringData;
+        return {
+          totalBase: acc.totalBase + (mps.total_base || 0),
+          totalSemMonitoramento: acc.totalSemMonitoramento + (mps.total_sem_monitoramento || 0)
+        };
+      }, { totalBase: 0, totalSemMonitoramento: 0 });
 
-    const total = filteredData.reduce((acc, item) => {
-      const val = isSLAData(item) ? item.percentual : (item as MonitoringData).percentual;
-      return acc + val;
-    }, 0);
+      return totalBase > 0 ? ((totalBase - totalSemMonitoramento) / totalBase) * 100 : 0;
+    } else {
+      // SLA Fila or SLA Projetos
+      const { totalDentro, totalTotal } = filteredData.reduce((acc, item) => {
+        const sla = item as SLAData;
+        return {
+          totalDentro: acc.totalDentro + (sla.dentro || 0),
+          totalTotal: acc.totalTotal + (sla.total || 0)
+        };
+      }, { totalDentro: 0, totalTotal: 0 });
 
-    return total / filteredData.length;
+      return totalTotal > 0 ? (totalDentro / totalTotal) * 100 : 0;
+    }
   }, [filteredData, activeTab]);
 
   const showKPIBar = averageKPI !== null;
@@ -342,7 +356,11 @@ export default function PresentationPage() {
           className="w-full flex items-center justify-center bg-secondary/30 border-b border-border/50 backdrop-blur-sm z-10"
           style={{ height: KPI_BAR_HEIGHT }}
         >
+<<<<<<< Updated upstream
           <div className="flex items-center justify-center px-12 py-4 rounded-full bg-background/50 border border-border/30 shadow-lg">
+=======
+          <div className="flex items-center gap-8 px-12 py-4 rounded-full bg-background/50 border border-border/30 shadow-lg">
+>>>>>>> Stashed changes
             <span className={`text-8xl font-extrabold ${averageKPI >= (settings.threshold_excellent ?? 98) ? 'text-chart-green' :
               averageKPI >= (settings.threshold_attention ?? 80) ? 'text-chart-yellow' : 'text-chart-red'
               }`}>

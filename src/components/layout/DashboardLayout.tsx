@@ -1,6 +1,6 @@
 import { ReactNode } from 'react';
 import { motion } from 'framer-motion';
-import { LayoutDashboard, Settings, LogOut, User } from 'lucide-react';
+import { LayoutDashboard, Settings, LogOut, User, BarChart2, Bell } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
 import { Button } from '@/components/ui/button';
 import {
@@ -15,8 +15,8 @@ import techubLogo from '@/assets/logo_techub.jpg';
 
 interface DashboardLayoutProps {
   children: ReactNode;
-  activeTab: 'monitoring' | 'settings';
-  onTabChange: (tab: 'monitoring' | 'settings') => void;
+  activeTab: 'monitoring' | 'reports' | 'alerts' | 'settings';
+  onTabChange: (tab: 'monitoring' | 'reports' | 'alerts' | 'settings') => void;
 }
 
 export function DashboardLayout({ children, activeTab, onTabChange }: DashboardLayoutProps) {
@@ -53,6 +53,28 @@ export function DashboardLayout({ children, activeTab, onTabChange }: DashboardL
                 <LayoutDashboard className="h-4 w-4" />
                 <span className="hidden sm:inline">Monitoramento</span>
               </Button>
+
+              <Button
+                variant={activeTab === 'reports' ? 'secondary' : 'ghost'}
+                size="sm"
+                onClick={() => onTabChange('reports')}
+                className="gap-2"
+              >
+                <BarChart2 className="h-4 w-4" />
+                <span className="hidden sm:inline">Relatórios</span>
+              </Button>
+
+              {(isAdmin || useAuth().hasPermission('alerts.view')) && (
+                <Button
+                  variant={activeTab === 'alerts' ? 'secondary' : 'ghost'}
+                  size="sm"
+                  onClick={() => onTabChange('alerts')}
+                  className="gap-2"
+                >
+                  <Bell className="h-4 w-4" />
+                  <span className="hidden sm:inline">Gestão de Alertas</span>
+                </Button>
+              )}
 
               {isAdmin && (
                 <Button

@@ -36,7 +36,11 @@ interface UserRow {
   department: string | null;
   is_active: boolean;
   role_id: number;
-  roles: { name: string; description: string | null } | null;
+  roles: {
+    name: string;
+    description: string | null;
+    is_active: boolean;
+  } | null;
 }
 
 Deno.serve(async (req) => {
@@ -58,7 +62,7 @@ Deno.serve(async (req) => {
     // Create Supabase client with service role key
     const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
     const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
-    
+
     const supabase = createClient(supabaseUrl, supabaseServiceKey);
 
     // Find user by email or username
@@ -73,7 +77,7 @@ Deno.serve(async (req) => {
         department,
         is_active,
         role_id,
-        roles(name, description)
+        roles(name, description, is_active)
       `)
       .or(`email.eq.${login},username.eq.${login}`)
       .eq('is_active', true)
@@ -87,9 +91,17 @@ Deno.serve(async (req) => {
       );
     }
 
+    if (!user.roles?.is_active) {
+      console.log("Role is inactive for user:", user.username);
+      return new Response(
+        JSON.stringify({ error: 'Esta conta está associada a um perfil inativo' }),
+        { status: 403, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
+
     // Verify password
     const isValidPassword = await verifyPassword(password, user.password_hash);
-    
+
     if (!isValidPassword) {
       console.log("Invalid password for user:", user.username);
       return new Response(
@@ -103,9 +115,9 @@ Deno.serve(async (req) => {
     const expiresAt = new Date(Date.now() + 8 * 60 * 60 * 1000); // 8 hours
 
     // Get client info
-    const ipAddress = req.headers.get('x-forwarded-for') || 
-                      req.headers.get('cf-connecting-ip') || 
-                      'unknown';
+    const ipAddress = req.headers.get('x-forwarded-for') ||
+      req.headers.get('cf-connecting-ip') ||
+      'unknown';
     const userAgent = req.headers.get('user-agent') || 'unknown';
 
     // Create session
@@ -127,6 +139,19 @@ Deno.serve(async (req) => {
       );
     }
 
+    // Get permissions for the role
+    const { data: permissionsData, error: permissionsError } = await supabase
+      .from('role_permissions')
+      .select('permission_key')
+      .eq('role_id', user.role_id)
+      .eq('enabled', true);
+
+    if (permissionsError) {
+      console.error("Error fetching permissions:", permissionsError);
+    }
+
+    const permissions = permissionsData?.map(p => p.permission_key) || [];
+
     // Return user data with session
     const userData = {
       id: user.id,
@@ -136,6 +161,7 @@ Deno.serve(async (req) => {
       department: user.department,
       role: user.roles?.name || 'USUARIO',
       role_description: user.roles?.description,
+      permissions: permissions,
     };
 
     console.log("Login successful for:", user.username);

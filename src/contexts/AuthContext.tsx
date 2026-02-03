@@ -8,6 +8,7 @@ interface AuthContextType extends AuthState {
   login: (loginId: string, password: string) => Promise<{ success: boolean; error?: string }>;
   logout: () => Promise<void>;
   isAdmin: boolean;
+  hasPermission: (permission: string) => boolean;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -144,8 +145,13 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   const isAdmin = authState.user?.role === 'ADM';
 
+  const hasPermission = useCallback((permission: string) => {
+    if (isAdmin) return true; // ADM always has all permissions
+    return authState.user?.permissions?.includes(permission) || false;
+  }, [isAdmin, authState.user?.permissions]);
+
   return (
-    <AuthContext.Provider value={{ ...authState, login, logout, isAdmin }}>
+    <AuthContext.Provider value={{ ...authState, login, logout, isAdmin, hasPermission }}>
       {children}
     </AuthContext.Provider>
   );
