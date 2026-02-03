@@ -90,18 +90,20 @@ export function AdaptiveSLADonutChart({
       className="glass rounded-xl h-full w-full flex flex-col items-center justify-center relative"
       style={{ padding }}
     >
-      {/* Trend Indicator */}
-      <div className="absolute" style={{ top: padding * 0.5, right: padding * 0.5 }}>
-        <TrendIndicator trend={trend} variation={variation} size={trendSize} />
+      {/* Header section with name and trend */}
+      <div className="w-full flex items-start justify-between gap-3 mb-2 px-0.5">
+        <h3
+          className="font-semibold text-foreground truncate cursor-help"
+          title={nome}
+          style={{ fontSize: titleSize }}
+        >
+          {nome}
+        </h3>
+        <div className="flex-shrink-0 pt-1">
+          <TrendIndicator trend={trend} variation={variation} size={trendSize} />
+        </div>
       </div>
 
-      {/* Name */}
-      <h3
-        className="text-center font-semibold text-foreground line-clamp-2 mb-2"
-        style={{ fontSize: titleSize, paddingRight: `${trendSize + 4}px` }}
-      >
-        {nome}
-      </h3>
 
       {/* Donut Chart */}
       <div className="relative flex-shrink-0" style={{ width: donutSize, height: donutSize }}>

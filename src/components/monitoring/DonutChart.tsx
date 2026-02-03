@@ -89,16 +89,21 @@ export function DonutChart({
       className={`glass rounded-xl p-5 transition-all hover:shadow-lg hover:shadow-primary/5 relative flex flex-col items-center ${onClick ? 'cursor-pointer hover:bg-white/5' : ''
         } ${anomaly ? 'ring-2 ring-orange-500/50' : ''}`}
     >
-      {/* Alerts & Trend */}
-      <div className="absolute top-3 right-3 flex flex-col gap-1 items-end">
-        <TrendIndicator trend={trend} variation={variation} size={16} />
+      {/* Header section with name and trend */}
+      <div className="w-full flex items-start justify-between gap-3 mb-4">
+        <h3
+          className="text-sm font-semibold text-foreground truncate cursor-help"
+          title={empresa}
+        >
+          {empresa}
+        </h3>
+        <div className="flex-shrink-0 pt-0.5">
+          <TrendIndicator trend={trend} variation={variation} size={16} />
+        </div>
       </div>
 
       <div className="flex flex-col items-center w-full">
-        {/* Company Name */}
-        <h3 className="mb-4 text-center text-sm font-semibold text-foreground line-clamp-2 h-10 pr-5 w-full">
-          {empresa}
-        </h3>
+        {/* Anomaly Badge */}
 
         {/* Anomaly Badge */}
         {anomaly && (

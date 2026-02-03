@@ -81,16 +81,21 @@ export function SLADonutChart({
       onClick={onClick}
       className={`glass rounded-xl p-5 transition-all hover:shadow-lg hover:shadow-primary/5 relative ${onClick ? 'cursor-pointer hover:bg-white/5' : ''}`}
     >
-      {/* Trend Indicator */}
-      <div className="absolute top-3 right-3">
-        <TrendIndicator trend={trend} variation={variation} size={16} />
+      {/* Header section with name and trend */}
+      <div className="w-full flex items-start justify-between gap-3 mb-4">
+        <h3
+          className="text-sm font-semibold text-foreground truncate cursor-help"
+          title={nome}
+        >
+          {nome}
+        </h3>
+        <div className="flex-shrink-0 pt-0.5">
+          <TrendIndicator trend={trend} variation={variation} size={16} />
+        </div>
       </div>
 
       <div className="flex flex-col items-center">
-        {/* Name */}
-        <h3 className="mb-4 text-center text-sm font-semibold text-foreground line-clamp-2 h-10 pr-5">
-          {nome}
-        </h3>
+        {/* Donut Chart */}
 
         {/* Donut Chart */}
         <div className="relative" style={{ width: size, height: size }}>
