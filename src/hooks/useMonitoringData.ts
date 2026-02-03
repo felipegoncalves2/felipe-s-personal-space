@@ -44,6 +44,7 @@ export function useMonitoringData() {
       const result = await response.json();
 
 <<<<<<< Updated upstream
+<<<<<<< Updated upstream
       if (result.success) {
         // Fetch history for stats calculation (last 7 days)
         const startDate = subDays(new Date(), 8).toISOString(); // Fetch slightly more to be safe
@@ -124,6 +125,10 @@ export function useMonitoringData() {
         setLastUpdated(new Date());
       } else {
         setError(result.error || 'Erro ao carregar dados');
+=======
+      if (!result.success) {
+        throw new Error(result.error || 'Erro ao carregar dados');
+>>>>>>> Stashed changes
 =======
       if (!result.success) {
         throw new Error(result.error || 'Erro ao carregar dados');
