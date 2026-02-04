@@ -8,6 +8,7 @@ export interface User {
   department: string | null;
   role: string;
   role_description?: string;
+  permissions?: string[];
 }
 
 export interface AuthState {

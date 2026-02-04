@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { X, UserPlus, Loader2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -52,13 +52,15 @@ export function CreateUserModal({ isOpen, onClose, onSuccess }: CreateUserModalP
     // Validation errors
     const [errors, setErrors] = useState<Record<string, string>>({});
 
-    // Load roles on mount
-    useState(() => {
+    // Load roles when modal opens
+    useEffect(() => {
         const loadRoles = async () => {
+            setLoadingRoles(true);
             try {
                 const { data, error } = await supabase
                     .from('roles')
                     .select('*')
+                    .eq('is_active', true)
                     .order('name');
 
                 if (error) throw error;
@@ -78,7 +80,7 @@ export function CreateUserModal({ isOpen, onClose, onSuccess }: CreateUserModalP
         if (isOpen) {
             loadRoles();
         }
-    });
+    }, [isOpen, toast]);
 
     const validateForm = () => {
         const newErrors: Record<string, string> = {};

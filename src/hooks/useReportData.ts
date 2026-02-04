@@ -73,7 +73,7 @@ export function useReportData() {
 
             if (dbError) throw dbError;
 
-            const formattedData: SLAReportData[] = (data || []).map(item => {
+            const formattedData: SLAReportData[] = (data || []).map((item: any) => {
                 const nome = type === 'fila' ? item.nome_fila : item.nome_projeto;
                 const total = (item.dentro || 0) + (item.fora || 0);
                 const percentual = total > 0 ? (item.dentro / total) * 100 : 0;
