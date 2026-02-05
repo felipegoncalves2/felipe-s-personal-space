@@ -79,10 +79,9 @@ export function MonitoringGrid() {
     const thresholdExcellent = settings.threshold_excellent ?? 98;
     const thresholdAttention = settings.threshold_attention ?? 80;
 
-    const totalBase = data.reduce((acc, d) => acc + (d.total_base || 0), 0);
-    const totalSemMonitoramento = data.reduce((acc, d) => acc + (d.total_sem_monitoramento || 0), 0);
-    const totalMonitorado = totalBase - totalSemMonitoramento;
-    const averagePercentual = totalBase > 0 ? (totalMonitorado / totalBase) * 100 : 0;
+    // Simple arithmetic mean: sum of all percentages / count
+    const sumPercentages = data.reduce((acc, d) => acc + (d.percentual || 0), 0);
+    const averagePercentual = data.length > 0 ? sumPercentages / data.length : 0;
 
     return {
       green: data.filter((d) => d.percentual >= thresholdExcellent).length,
