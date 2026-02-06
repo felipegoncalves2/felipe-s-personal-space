@@ -27,28 +27,21 @@ export function useReportData() {
         setLoading(true);
         setError(null);
         try {
-            const { data, error: dbError } = await supabase
-                .from('monitoramento_parque')
-                .select('*')
-                .gte('data_gravacao', startDate.toISOString())
-                .lte('data_gravacao', endDate.toISOString())
-                .order('data_gravacao', { ascending: true });
+            const { data, error: dbError } = await (supabase as any)
+                .rpc('get_mps_history', {
+                    start_date: startDate.toISOString(),
+                    end_date: endDate.toISOString()
+                });
 
             if (dbError) throw dbError;
 
-            const formattedData: MPSReportData[] = (data || []).map(item => {
-                const totalBase = parseInt(item.total_base || '0');
-                const semMonit = parseInt(item.total_sem_monitoramento || '0');
-                const percentual = totalBase > 0 ? ((totalBase - semMonit) / totalBase) * 100 : 0;
-
-                return {
-                    empresa: item.empresa,
-                    total_base: totalBase,
-                    total_sem_monitoramento: semMonit,
-                    data_gravacao: item.data_gravacao,
-                    percentual: parseFloat(percentual.toFixed(2))
-                };
-            });
+            const formattedData: MPSReportData[] = (data || []).map((item: any) => ({
+                empresa: item.empresa,
+                total_base: Number(item.total_base),
+                total_sem_monitoramento: Number(item.total_sem_monitoramento),
+                data_gravacao: item.data_gravacao,
+                percentual: Number(item.percentual)
+            }));
 
             return formattedData;
         } catch (err: any) {

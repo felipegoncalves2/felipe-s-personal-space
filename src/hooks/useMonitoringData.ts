@@ -8,7 +8,7 @@ import { persistAlert } from '@/lib/alerts';
 
 const SUPABASE_URL = 'https://qromvrzqktrfexbnaoem.supabase.co';
 const SESSION_KEY = 'techub_session';
-const REFRESH_INTERVAL = 60 * 60 * 1000; // 1 hour
+const REFRESH_INTERVAL = 5 * 60 * 1000; // 5 minutes
 
 export function useMonitoringData() {
   const [data, setData] = useState<MonitoringData[]>([]);
@@ -19,7 +19,7 @@ export function useMonitoringData() {
 
   const fetchData = useCallback(async () => {
     try {
-      setIsLoading(true);
+      if (!lastUpdated) setIsLoading(true);
       setError(null);
 
       const storedSession = localStorage.getItem(SESSION_KEY);

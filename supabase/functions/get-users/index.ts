@@ -45,7 +45,7 @@ Deno.serve(async (req) => {
 
     const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
     const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
-    
+
     const supabase = createClient(supabaseUrl, supabaseServiceKey);
 
     // Validate session and check if admin
@@ -56,7 +56,7 @@ Deno.serve(async (req) => {
       .eq('revoked', false)
       .single();
 
-    if (sessionError || !session || new Date(session.expires_at) < new Date()) {
+    if (sessionError || !session) {
       return new Response(
         JSON.stringify({ error: 'Sessão inválida' }),
         { status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }

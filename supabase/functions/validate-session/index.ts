@@ -55,19 +55,19 @@ Deno.serve(async (req) => {
       );
     }
 
-    // Check expiration
-    if (new Date(session.expires_at) < new Date()) {
-      // Revoke expired session
-      await supabase
-        .from('sessions')
-        .update({ revoked: true })
-        .eq('id', session.id);
+    // Check expiration - REMOVED per requirement (Sessions should not expire automatically)
+    // if (new Date(session.expires_at) < new Date()) {
+    //   // Revoke expired session
+    //   await supabase
+    //     .from('sessions')
+    //     .update({ revoked: true })
+    //     .eq('id', session.id);
 
-      return new Response(
-        JSON.stringify({ valid: false, error: 'Sessão expirada' }),
-        { status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-      );
-    }
+    //   return new Response(
+    //     JSON.stringify({ valid: false, error: 'Sessão expirada' }),
+    //     { status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+    //   );
+    // }
 
     // Get user data
     const { data: user, error: userError } = await supabase

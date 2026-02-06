@@ -86,6 +86,19 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     }
   }, [validateSession]);
 
+  // Silent ping to keep session active (verify revoked status)
+  useEffect(() => {
+    if (!authState.isAuthenticated || !authState.session_token) return;
+
+    const PING_INTERVAL = 5 * 60 * 1000; // 5 minutes
+    const interval = setInterval(() => {
+      // Validate session without blocking UI
+      validateSession(authState.session_token!).catch(err => console.error('Ping failed:', err));
+    }, PING_INTERVAL);
+
+    return () => clearInterval(interval);
+  }, [authState.isAuthenticated, authState.session_token, validateSession]);
+
   const login = async (loginId: string, password: string): Promise<{ success: boolean; error?: string }> => {
     try {
       const response = await fetch(`${SUPABASE_URL}/functions/v1/login`, {

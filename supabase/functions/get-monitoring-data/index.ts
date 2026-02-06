@@ -26,7 +26,7 @@ Deno.serve(async (req) => {
 
     const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
     const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
-    
+
     const supabase = createClient(supabaseUrl, supabaseServiceKey);
 
     if (sessionToken) {
@@ -38,7 +38,7 @@ Deno.serve(async (req) => {
         .eq('revoked', false)
         .single();
 
-      if (sessionError || !session || new Date(session.expires_at) < new Date()) {
+      if (sessionError || !session) {
         return new Response(
           JSON.stringify({ error: 'Sessão inválida' }),
           { status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
@@ -62,7 +62,7 @@ Deno.serve(async (req) => {
 
     // Process data to get latest record per company
     const companiesMap = new Map<string, MonitoringData>();
-    
+
     for (const row of rawData || []) {
       if (!companiesMap.has(row.empresa)) {
         const totalBase = parseInt(row.total_base) || 0;
