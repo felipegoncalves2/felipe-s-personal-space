@@ -40,7 +40,8 @@ export function ExecutiveSummary({ kpis, type }: ExecutiveSummaryProps) {
 
                 <p>
                     O principal ofensor identificado no período foi <span className="font-bold text-primary">{kpis.topCriticalItem}</span>,
-                    totalizando <span className="font-bold text-foreground">{kpis.outsideSLA} chamados com SLA Perdido</span>.
+                    com <span className="font-bold text-foreground">{kpis.topCriticalCount} chamados perdidos</span>.
+                    No período analisado, o total de SLA Perdido considerando todas as {type === 'fila' ? 'filas' : 'projetos'} foi de <span className="font-bold text-foreground">{kpis.outsideSLA} chamados</span>.
                 </p>
             </div>
         </motion.div>

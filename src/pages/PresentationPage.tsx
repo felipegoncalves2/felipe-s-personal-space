@@ -125,14 +125,21 @@ export default function PresentationPage() {
       }, { totalBase: 0, totalSemMonitoramento: 0 });
 
       return totalBase > 0 ? ((totalBase - totalSemMonitoramento) / totalBase) * 100 : 0;
-    } else {
-      // Simple arithmetic mean for SLA Fila or SLA Projetos
-      const sumPercentages = filteredData.reduce((acc, item) => {
+    } else if (activeTab === 'sla-projetos') {
+      // Weighted (composta) average for SLA Projetos
+      const { totalDentro, totalFora } = filteredData.reduce((acc, item) => {
         const sla = item as SLAData;
-        return acc + (sla.percentual || 0);
-      }, 0);
+        return {
+          totalDentro: acc.totalDentro + (sla.dentro || 0),
+          totalFora: acc.totalFora + (sla.fora || 0)
+        };
+      }, { totalDentro: 0, totalFora: 0 });
 
-      return sumPercentages / filteredData.length;
+      const totalTotal = totalDentro + totalFora;
+      return totalTotal > 0 ? (totalDentro / totalTotal) * 100 : 0;
+    } else {
+      // activeTab === 'sla-fila' - Hide average as per requirement
+      return null;
     }
   }, [filteredData, activeTab]);
 

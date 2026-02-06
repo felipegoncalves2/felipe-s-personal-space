@@ -10,6 +10,7 @@ export interface SLAAnalysisKPIs {
     totalAlerts: number;
     anomalies: number;
     topCriticalItem: string;
+    topCriticalCount: number;
 }
 
 export interface HistoricalPoint {
@@ -36,7 +37,8 @@ export function useSLAAnalysis(type: 'fila' | 'projetos') {
         categorias: CauseImpact[];
         incidentes: CauseImpact[];
         divisoes: CauseImpact[];
-    }>({ motivos: [], categorias: [], incidentes: [], divisoes: [] });
+        slaPorUf: CauseImpact[];
+    }>({ motivos: [], categorias: [], incidentes: [], divisoes: [], slaPorUf: [] });
     const [detailedData, setDetailedData] = useState<any[]>([]);
 
     const fetchData = useCallback(async () => {
@@ -47,8 +49,7 @@ export function useSLAAnalysis(type: 'fila' | 'projetos') {
             const startDateStr = startOfMonth(now).toISOString();
             const endDateStr = now.toISOString();
 
-            // 1. Fetch Detailed Data (Source of truth for causes and KPIs)
-            // Note: We filter by created_at as requested for the visibility window
+            // 1. Fetch Detailed Data
             const { data: rawDetailed, error: detailedError } = await supabase
                 .from('sla_detalhado_rn' as any)
                 .select('*')
@@ -62,7 +63,7 @@ export function useSLAAnalysis(type: 'fila' | 'projetos') {
                 ? (rawDetailed as any[]).filter(d => d.fila)
                 : (rawDetailed as any[]).filter(d => d.nome_projeto);
 
-            // 2. Fetch History Snapshots (Sources 2 & 3)
+            // 2. Fetch History Snapshots
             const historyTable = type === 'fila' ? 'sla_fila_rn' : 'sla_projetos_rn';
             const { data: rawHistory, error: historyError } = await supabase
                 .from(historyTable as any)
@@ -83,7 +84,7 @@ export function useSLAAnalysis(type: 'fila' | 'projetos') {
 
             if (alertsError) throw alertsError;
 
-            // --- KPIs (Directly from detailed) ---
+            // --- KPIs ---
             const totalTickets = filteredDetailed.length;
             const lostTickets = filteredDetailed.filter((d: any) => d.sla_perdido === 'Sim').length;
             const slaPercentage = totalTickets > 0 ? ((totalTickets - lostTickets) / totalTickets) * 100 : 0;
@@ -99,8 +100,11 @@ export function useSLAAnalysis(type: 'fila' | 'projetos') {
                     }
                 }
             });
-            const topCriticalItem = Object.entries(itemCounts)
-                .sort(([, a], [, b]) => b - a)[0]?.[0] || '---';
+            const topEntry = Object.entries(itemCounts)
+                .sort(([, a], [, b]) => b - a)[0];
+
+            const topCriticalItem = topEntry?.[0] || '---';
+            const topCriticalCount = topEntry?.[1] || 0;
 
             setKpis({
                 totalTickets,
@@ -108,17 +112,16 @@ export function useSLAAnalysis(type: 'fila' | 'projetos') {
                 outsideSLA: lostTickets,
                 totalAlerts,
                 anomalies: anomaliesCount,
-                topCriticalItem
+                topCriticalItem,
+                topCriticalCount
             });
 
-            // --- DAILY RANGE AGGREGATION (From Snapshots) ---
+            // --- DAILY RANGE AGGREGATION ---
             const daySnapshots: Record<string, number[]> = {};
-
             (rawHistory as any[] || []).forEach(h => {
                 const date = new Date(h.created_at);
                 const dateKey = format(date, 'yyyy-MM-dd');
                 const val = typeof h.percentual === 'string' ? parseFloat(h.percentual) : h.percentual;
-
                 if (!daySnapshots[dateKey]) daySnapshots[dateKey] = [];
                 daySnapshots[dateKey].push(val);
             });
@@ -127,23 +130,18 @@ export function useSLAAnalysis(type: 'fila' | 'projetos') {
                 const min = Math.min(...values);
                 const max = Math.max(...values);
                 const avg = values.reduce((a, b) => a + b, 0) / values.length;
-
                 const dayStart = startOfDay(new Date(dateKey + 'T00:00:00'));
                 const dayEnd = new Date(dateKey + 'T23:59:59');
-
                 const alertDay = (rawAlerts as any[] || []).filter(a => {
                     const ad = new Date(a.detected_at);
                     return ad >= dayStart && ad <= dayEnd;
                 });
-
-                const hasAnomaly = alertDay.some(a => a.alert_type === 'anomalia');
-
                 return {
                     timestamp: dayStart.toISOString(),
                     min: parseFloat(min.toFixed(1)),
                     max: parseFloat(max.toFixed(1)),
                     avg: parseFloat(avg.toFixed(1)),
-                    hasAnomaly,
+                    hasAnomaly: alertDay.some(a => a.alert_type === 'anomalia'),
                     alerts: alertDay
                 };
             }).sort((a, b) => new Date(a.timestamp).getTime() - new Date(b.timestamp).getTime());
@@ -164,11 +162,26 @@ export function useSLAAnalysis(type: 'fila' | 'projetos') {
                     .sort((a, b) => b.value - a.value);
             };
 
+            // SLA by UF Calculation
+            const ufStats: Record<string, { total: number, lost: number }> = {};
+            filteredDetailed.forEach((d: any) => {
+                const uf = d.uf || 'Ignorado';
+                if (!ufStats[uf]) ufStats[uf] = { total: 0, lost: 0 };
+                ufStats[uf].total += 1;
+                if (d.sla_perdido === 'Sim') ufStats[uf].lost += 1;
+            });
+
+            const slaPorUf = Object.entries(ufStats).map(([name, stats]) => ({
+                name,
+                value: parseFloat((((stats.total - stats.lost) / stats.total) * 100).toFixed(2))
+            })).sort((a, b) => a.value - b.value); // Sort ascending (worst SLA first as requested)
+
             setCauses({
                 motivos: getCounts('motivo_perda_sla').slice(0, 10),
                 categorias: getCounts('categoria_perda_sla'),
                 incidentes: getCounts('tipo_incidente', false),
-                divisoes: getCounts('divisao_perda_sla')
+                divisoes: getCounts('divisao_perda_sla'),
+                slaPorUf
             });
 
             setDetailedData(filteredDetailed);

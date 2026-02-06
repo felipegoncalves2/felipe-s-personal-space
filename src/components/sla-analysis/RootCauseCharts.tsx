@@ -16,6 +16,7 @@ interface RootCauseChartsProps {
         categorias: CauseImpact[];
         incidentes: CauseImpact[];
         divisoes: CauseImpact[];
+        slaPorUf: CauseImpact[];
     };
 }
 
@@ -78,14 +79,14 @@ export function RootCauseCharts({ causes }: RootCauseChartsProps) {
                     )}
                 </div>
 
-                {/* Gráfico 2 — Incidentes por TIPO */}
+                {/* Gráfico 2 — SLA por UF */}
                 <div className="glass rounded-xl p-6 h-[400px] flex flex-col">
-                    <h3 className="text-lg font-bold text-foreground mb-1">Incidentes por Tipo</h3>
-                    <p className="text-xs text-muted-foreground mb-6">Volume total de chamados por natureza (Contexto)</p>
+                    <h3 className="text-lg font-bold text-foreground mb-1">SLA por UF</h3>
+                    <p className="text-xs text-muted-foreground mb-6">Desempenho regional consolidado (Percentual dentro do SLA)</p>
 
-                    {hasIncidentes ? (
+                    {causes.slaPorUf.length > 0 ? (
                         <ResponsiveContainer width="100%" height="80%">
-                            <BarChart data={causes.incidentes} margin={{ bottom: 20 }}>
+                            <BarChart data={causes.slaPorUf} margin={{ bottom: 20 }}>
                                 <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="rgba(255,255,255,0.05)" />
                                 <XAxis
                                     dataKey="name"
@@ -98,9 +99,12 @@ export function RootCauseCharts({ causes }: RootCauseChartsProps) {
                                     axisLine={false}
                                     tickLine={false}
                                     fontSize={10}
+                                    domain={[0, 100]}
                                     tick={{ fill: 'rgba(148, 163, 184, 0.8)' }}
+                                    tickFormatter={(val) => `${val}%`}
                                 />
                                 <Tooltip
+                                    cursor={{ fill: 'rgba(255, 255, 255, 0.05)' }}
                                     contentStyle={{
                                         background: '#0f172a',
                                         border: '1px solid rgba(255,255,255,0.1)',
@@ -108,14 +112,26 @@ export function RootCauseCharts({ causes }: RootCauseChartsProps) {
                                         fontSize: '11px',
                                         color: '#cbd5e1'
                                     }}
+                                    formatter={(val: number) => [`${val}%`, 'SLA']}
                                 />
-                                <Bar dataKey="value" fill="#6366f1" radius={[4, 4, 0, 0]} barSize={40} />
+                                <Bar dataKey="value" radius={[4, 4, 0, 0]} barSize={40}>
+                                    {causes.slaPorUf.map((entry, index) => {
+                                        // The data is sorted ascending, so the first one is the worst
+                                        const isWorst = index === 0;
+                                        return (
+                                            <Cell
+                                                key={`cell-${index}`}
+                                                fill={isWorst ? '#f43f5e' : '#6366f1'}
+                                            />
+                                        );
+                                    })}
+                                </Bar>
                             </BarChart>
                         </ResponsiveContainer>
                     ) : (
                         <div className="flex-1 flex items-center justify-center border border-dashed border-white/5 rounded-lg bg-white/5">
                             <p className="text-xs text-muted-foreground italic text-center px-4">
-                                Sem registros de incidentes no período atual.
+                                Sem registros regionais no período atual.
                             </p>
                         </div>
                     )}

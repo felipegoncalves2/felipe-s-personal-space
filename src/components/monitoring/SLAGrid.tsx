@@ -84,17 +84,29 @@ export function SLAGrid({ type }: SLAGridProps) {
     const thresholdExcellent = settings.threshold_excellent ?? 98;
     const thresholdAttention = settings.threshold_attention ?? 80;
 
-    // Simple arithmetic mean: sum of all percentages / count
-    const sumPercentages = data.reduce((acc, d) => acc + (d.percentual || 0), 0);
-    const averagePercentual = data.length > 0 ? sumPercentages / data.length : 0;
+    const totalDentro = data.reduce((acc, d) => acc + (d.dentro || 0), 0);
+    const totalFora = data.reduce((acc, d) => acc + (d.fora || 0), 0);
+    const totalGeral = totalDentro + totalFora;
+
+    let averagePercentual = 0;
+    if (type === 'projetos') {
+      // Weighted average (composta) for Projetos
+      averagePercentual = totalGeral > 0 ? (totalDentro / totalGeral) * 100 : 0;
+    } else {
+      // Simple average for Fila (not shown)
+      const sumPercentages = data.reduce((acc, d) => acc + (d.percentual || 0), 0);
+      averagePercentual = data.length > 0 ? sumPercentages / data.length : 0;
+    }
 
     return {
       green: data.filter((d) => d.percentual >= thresholdExcellent).length,
       yellow: data.filter((d) => d.percentual >= thresholdAttention && d.percentual < thresholdExcellent).length,
       red: data.filter((d) => d.percentual < thresholdAttention).length,
-      average: averagePercentual
+      average: averagePercentual,
+      totalDentro,
+      totalFora
     };
-  }, [data, settings.threshold_excellent, settings.threshold_attention]);
+  }, [data, type, settings.threshold_excellent, settings.threshold_attention]);
 
   const typeLabel = type === 'fila' ? 'Fila' : 'Projeto';
   const searchPlaceholder = type === 'fila' ? 'Buscar fila...' : 'Buscar projeto...';
@@ -114,24 +126,48 @@ export function SLAGrid({ type }: SLAGridProps) {
   return (
     <div className="space-y-6">
       {/* Status Summary */}
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+      <div className={`grid grid-cols-2 ${type === 'fila' ? 'md:grid-cols-5' : 'md:grid-cols-3 lg:grid-cols-6'} gap-4`}>
+        {type === 'projetos' && (
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            className="glass rounded-lg p-4 text-center border-l-4 border-l-primary"
+          >
+            <div className="text-2xl font-bold text-primary">{summaryStats.average.toFixed(2)}%</div>
+            <div className="text-xs text-muted-foreground mt-1">Média Geral</div>
+          </motion.div>
+        )}
+
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
-          className="glass rounded-lg p-4 text-center border-l-4 border-l-primary"
+          transition={{ delay: 0.05 }}
+          className="glass rounded-lg p-4 text-center border-l-4 border-l-chart-green"
         >
-          <div className="text-2xl font-bold text-primary">{summaryStats.average.toFixed(2)}%</div>
-          <div className="text-xs text-muted-foreground mt-1">Média Geral</div>
+          <div className="text-2xl font-bold text-chart-green">{summaryStats.totalDentro}</div>
+          <div className="text-xs text-muted-foreground mt-1">Total Atendidos</div>
         </motion.div>
+
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.1 }}
+          className="glass rounded-lg p-4 text-center border-l-4 border-l-chart-red"
+        >
+          <div className="text-2xl font-bold text-chart-red">{summaryStats.totalFora}</div>
+          <div className="text-xs text-muted-foreground mt-1">Total Perdidos</div>
+        </motion.div>
+
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.15 }}
           className="glass rounded-lg p-4 text-center"
         >
           <div className="text-2xl font-bold text-chart-green">{summaryStats.green}</div>
           <div className="text-xs text-muted-foreground mt-1">Excelente (≥{settings.threshold_excellent ?? 98}%)</div>
         </motion.div>
+
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
@@ -141,10 +177,11 @@ export function SLAGrid({ type }: SLAGridProps) {
           <div className="text-2xl font-bold text-chart-yellow">{summaryStats.yellow}</div>
           <div className="text-xs text-muted-foreground mt-1">Atenção ({settings.threshold_attention ?? 80}-{settings.threshold_excellent ?? 97.9}%)</div>
         </motion.div>
+
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.3 }}
+          transition={{ delay: 0.25 }}
           className="glass rounded-lg p-4 text-center"
         >
           <div className="text-2xl font-bold text-chart-red">{summaryStats.red}</div>

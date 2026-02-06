@@ -49,21 +49,36 @@ export function SLAReport({ type }: SLAReportProps) {
 
     // Chart data: Average percentage by date
     const chartData = useMemo(() => {
-        const dataByDate = new Map<string, { date: string, total: number, count: number }>();
-
-        filteredData.forEach(item => {
-            const dateKey = format(new Date(item.created_at), 'dd/MM');
-            const existing = dataByDate.get(dateKey) || { date: dateKey, total: 0, count: 0 };
-            existing.total += item.percentual;
-            existing.count += 1;
-            dataByDate.set(dateKey, existing);
-        });
-
-        return Array.from(dataByDate.values()).map(d => ({
-            date: d.date,
-            percentual: parseFloat((d.total / d.count).toFixed(2))
-        }));
-    }, [filteredData]);
+        if (type === 'projetos') {
+            // Weighted average for Projetos
+            const dataByDate = new Map<string, { date: string, totalDentro: number, totalTotal: number }>();
+            filteredData.forEach(item => {
+                const dateKey = format(new Date(item.created_at), 'dd/MM');
+                const existing = dataByDate.get(dateKey) || { date: dateKey, totalDentro: 0, totalTotal: 0 };
+                existing.totalDentro += (item.dentro || 0);
+                existing.totalTotal += (item.total || 0);
+                dataByDate.set(dateKey, existing);
+            });
+            return Array.from(dataByDate.values()).map(d => ({
+                date: d.date,
+                percentual: d.totalTotal > 0 ? parseFloat(((d.totalDentro / d.totalTotal) * 100).toFixed(2)) : 0
+            }));
+        } else {
+            // Simple average for Fila
+            const dataByDate = new Map<string, { date: string, total: number, count: number }>();
+            filteredData.forEach(item => {
+                const dateKey = format(new Date(item.created_at), 'dd/MM');
+                const existing = dataByDate.get(dateKey) || { date: dateKey, total: 0, count: 0 };
+                existing.total += item.percentual;
+                existing.count += 1;
+                dataByDate.set(dateKey, existing);
+            });
+            return Array.from(dataByDate.values()).map(d => ({
+                date: d.date,
+                percentual: parseFloat((d.total / d.count).toFixed(2))
+            }));
+        }
+    }, [filteredData, type]);
 
     // Rankings
     const rankings = useMemo(() => {
@@ -250,7 +265,7 @@ export function SLAReport({ type }: SLAReportProps) {
                                         <TableCell>{item.total}</TableCell>
                                         <TableCell>
                                             <span className={`font-bold ${item.percentual >= 98 ? 'text-chart-green' :
-                                                    item.percentual >= 80 ? 'text-chart-yellow' : 'text-chart-red'
+                                                item.percentual >= 80 ? 'text-chart-yellow' : 'text-chart-red'
                                                 }`}>
                                                 {item.percentual}%
                                             </span>
