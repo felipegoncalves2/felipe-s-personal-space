@@ -84,14 +84,9 @@ export function SLAGrid({ type }: SLAGridProps) {
     const thresholdExcellent = settings.threshold_excellent ?? 98;
     const thresholdAttention = settings.threshold_attention ?? 80;
 
-<<<<<<< HEAD
-    const totalPercentual = data.reduce((acc, d) => acc + d.percentual, 0);
-    const averagePercentual = data.length > 0 ? totalPercentual / data.length : 0;
-=======
     // Simple arithmetic mean: sum of all percentages / count
     const sumPercentages = data.reduce((acc, d) => acc + (d.percentual || 0), 0);
     const averagePercentual = data.length > 0 ? sumPercentages / data.length : 0;
->>>>>>> df88f6ba8969728b8d54756b237b8314a59700a3
 
     return {
       green: data.filter((d) => d.percentual >= thresholdExcellent).length,

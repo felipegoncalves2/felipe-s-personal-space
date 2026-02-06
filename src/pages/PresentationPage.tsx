@@ -110,18 +110,31 @@ export default function PresentationPage() {
     });
   }, [rawData, settings]);
 
-  // Calculate Average KPI - Simple arithmetic mean of percentages
+  // Calculate Average KPI (Weighted for MPS, Simple for SLA)
   const averageKPI = useMemo(() => {
     if (!filteredData.length) return null;
 
-    // Simple arithmetic mean: sum of all percentages / count
-    const sumPercentages = filteredData.reduce((acc, item) => {
-      const percentual = isSLAData(item) ? item.percentual : (item as MonitoringData).percentual;
-      return acc + (percentual || 0);
-    }, 0);
+    if (activeTab === 'mps') {
+      // Weighted average for MPS
+      const { totalBase, totalSemMonitoramento } = filteredData.reduce((acc, item) => {
+        const mps = item as MonitoringData;
+        return {
+          totalBase: acc.totalBase + (mps.total_base || 0),
+          totalSemMonitoramento: acc.totalSemMonitoramento + (mps.total_sem_monitoramento || 0)
+        };
+      }, { totalBase: 0, totalSemMonitoramento: 0 });
 
-    return sumPercentages / filteredData.length;
-  }, [filteredData]);
+      return totalBase > 0 ? ((totalBase - totalSemMonitoramento) / totalBase) * 100 : 0;
+    } else {
+      // Simple arithmetic mean for SLA Fila or SLA Projetos
+      const sumPercentages = filteredData.reduce((acc, item) => {
+        const sla = item as SLAData;
+        return acc + (sla.percentual || 0);
+      }, 0);
+
+      return sumPercentages / filteredData.length;
+    }
+  }, [filteredData, activeTab]);
 
   const showKPIBar = averageKPI !== null;
 

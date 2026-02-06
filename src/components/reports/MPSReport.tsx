@@ -40,21 +40,22 @@ export function MPSReport() {
         );
     }, [rawData, searchTerm]);
 
-    // Chart data: Average percentage by date
+    // Chart data: Weighted average percentage by date
     const chartData = useMemo(() => {
-        const dataByDate = new Map<string, { date: string, total: number, count: number }>();
+        const dataByDate = new Map<string, { date: string, totalBase: number, totalMonitorado: number }>();
 
         filteredData.forEach(item => {
             const dateKey = format(new Date(item.data_gravacao), 'dd/MM');
-            const existing = dataByDate.get(dateKey) || { date: dateKey, total: 0, count: 0 };
-            existing.total += item.percentual;
-            existing.count += 1;
+            const existing = dataByDate.get(dateKey) || { date: dateKey, totalBase: 0, totalMonitorado: 0 };
+            const monitorado = item.total_base - item.total_sem_monitoramento;
+            existing.totalBase += item.total_base;
+            existing.totalMonitorado += monitorado;
             dataByDate.set(dateKey, existing);
         });
 
         return Array.from(dataByDate.values()).map(d => ({
             date: d.date,
-            percentual: parseFloat((d.total / d.count).toFixed(2))
+            percentual: d.totalBase > 0 ? parseFloat(((d.totalMonitorado / d.totalBase) * 100).toFixed(2)) : 0
         }));
     }, [filteredData]);
 
@@ -240,7 +241,7 @@ export function MPSReport() {
                                         <TableCell>{item.total_sem_monitoramento}</TableCell>
                                         <TableCell>
                                             <span className={`font-bold ${item.percentual >= 98 ? 'text-chart-green' :
-                                                    item.percentual >= 80 ? 'text-chart-yellow' : 'text-chart-red'
+                                                item.percentual >= 80 ? 'text-chart-yellow' : 'text-chart-red'
                                                 }`}>
                                                 {item.percentual}%
                                             </span>
