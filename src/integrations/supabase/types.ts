@@ -614,6 +614,16 @@ export type Database = {
     }
     Functions: {
       fn_generate_sla_snapshots: { Args: never; Returns: undefined }
+      get_mps_history: {
+        Args: { end_date: string; start_date: string }
+        Returns: {
+          data_gravacao: string
+          empresa: string
+          percentual: number
+          total_base: number
+          total_sem_monitoramento: number
+        }[]
+      }
       record_sla_snapshot_internal: { Args: never; Returns: undefined }
     }
     Enums: {
