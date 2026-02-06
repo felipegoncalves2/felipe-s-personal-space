@@ -110,34 +110,18 @@ export default function PresentationPage() {
     });
   }, [rawData, settings]);
 
-  // Calculate Average KPI (Improved with weighted average)
+  // Calculate Average KPI - Simple arithmetic mean of percentages
   const averageKPI = useMemo(() => {
     if (!filteredData.length) return null;
 
-    // Calculate totals based on item type
-    if (activeTab === 'mps') {
-      const { totalBase, totalSemMonitoramento } = filteredData.reduce((acc, item) => {
-        const mps = item as MonitoringData;
-        return {
-          totalBase: acc.totalBase + (mps.total_base || 0),
-          totalSemMonitoramento: acc.totalSemMonitoramento + (mps.total_sem_monitoramento || 0)
-        };
-      }, { totalBase: 0, totalSemMonitoramento: 0 });
+    // Simple arithmetic mean: sum of all percentages / count
+    const sumPercentages = filteredData.reduce((acc, item) => {
+      const percentual = isSLAData(item) ? item.percentual : (item as MonitoringData).percentual;
+      return acc + (percentual || 0);
+    }, 0);
 
-      return totalBase > 0 ? ((totalBase - totalSemMonitoramento) / totalBase) * 100 : 0;
-    } else {
-      // SLA Fila or SLA Projetos
-      const { totalDentro, totalTotal } = filteredData.reduce((acc, item) => {
-        const sla = item as SLAData;
-        return {
-          totalDentro: acc.totalDentro + (sla.dentro || 0),
-          totalTotal: acc.totalTotal + (sla.total || 0)
-        };
-      }, { totalDentro: 0, totalTotal: 0 });
-
-      return totalTotal > 0 ? (totalDentro / totalTotal) * 100 : 0;
-    }
-  }, [filteredData, activeTab]);
+    return sumPercentages / filteredData.length;
+  }, [filteredData]);
 
   const showKPIBar = averageKPI !== null;
 

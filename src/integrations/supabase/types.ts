@@ -80,6 +80,83 @@ export type Database = {
         }
         Relationships: []
       }
+      monitoring_alerts: {
+        Row: {
+          alert_type: string
+          comentario_tratamento: string | null
+          contexto: Json | null
+          created_at: string
+          detected_at: string
+          id: string
+          identificador_item: string
+          percentual_atual: number
+          severity: string
+          tipo_monitoramento: string
+          tratado: boolean
+          tratado_em: string | null
+          tratado_por: number | null
+        }
+        Insert: {
+          alert_type: string
+          comentario_tratamento?: string | null
+          contexto?: Json | null
+          created_at?: string
+          detected_at?: string
+          id?: string
+          identificador_item: string
+          percentual_atual: number
+          severity: string
+          tipo_monitoramento: string
+          tratado?: boolean
+          tratado_em?: string | null
+          tratado_por?: number | null
+        }
+        Update: {
+          alert_type?: string
+          comentario_tratamento?: string | null
+          contexto?: Json | null
+          created_at?: string
+          detected_at?: string
+          id?: string
+          identificador_item?: string
+          percentual_atual?: number
+          severity?: string
+          tipo_monitoramento?: string
+          tratado?: boolean
+          tratado_em?: string | null
+          tratado_por?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "monitoring_alerts_tratado_por_fkey"
+            columns: ["tratado_por"]
+            isOneToOne: false
+            referencedRelation: "users"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      permissions: {
+        Row: {
+          description: string | null
+          key: string
+          module: string
+          name: string
+        }
+        Insert: {
+          description?: string | null
+          key: string
+          module: string
+          name: string
+        }
+        Update: {
+          description?: string | null
+          key?: string
+          module?: string
+          name?: string
+        }
+        Relationships: []
+      }
       presentation_settings: {
         Row: {
           companies_per_page: number
@@ -131,154 +208,42 @@ export type Database = {
         }
         Relationships: []
       }
-      permissions: {
+      role_audit_log: {
         Row: {
-          key: string
-          name: string
-          module: string
-          description: string | null
-        }
-        Insert: {
-          key: string
-          name: string
-          module: string
-          description?: string | null
-        }
-        Update: {
-          key?: string
-          name?: string
-          module?: string
-          description?: string | null
-        }
-        Relationships: []
-      }
-      role_permissions: {
-        Row: {
+          action: string
+          changed_at: string | null
+          changed_by: number | null
           id: string
-          role_id: number
-          permission_key: string
-          enabled: boolean
-          created_at: string
-          updated_at: string
+          new_values: Json | null
+          old_values: Json | null
+          role_id: number | null
         }
         Insert: {
+          action: string
+          changed_at?: string | null
+          changed_by?: number | null
           id?: string
-          role_id: number
-          permission_key: string
-          enabled?: boolean
-          created_at?: string
-          updated_at?: string
+          new_values?: Json | null
+          old_values?: Json | null
+          role_id?: number | null
         }
         Update: {
+          action?: string
+          changed_at?: string | null
+          changed_by?: number | null
           id?: string
-          role_id?: number
-          permission_key?: string
-          enabled?: boolean
-          created_at?: string
-          updated_at?: string
+          new_values?: Json | null
+          old_values?: Json | null
+          role_id?: number | null
         }
         Relationships: [
           {
-            foreignKeyName: "role_permissions_role_id_fkey"
-            columns: ["role_id"]
-            isOneToOne: false
-            referencedRelation: "roles"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "role_permissions_permission_key_fkey"
-            columns: ["permission_key"]
-            isOneToOne: false
-            referencedRelation: "permissions"
-            referencedColumns: ["key"]
-          }
-        ]
-      }
-      monitoring_alerts: {
-        Row: {
-          id: string
-          tipo_monitoramento: string
-          identificador_item: string
-          alert_type: string
-          severity: string
-          percentual_atual: number
-          contexto: Json | null
-          detected_at: string
-          tratado: boolean
-          tratado_em: string | null
-          tratado_por: number | null
-          comentario_tratamento: string | null
-          created_at: string
-        }
-        Insert: {
-          id?: string
-          tipo_monitoramento: string
-          identificador_item: string
-          alert_type: string
-          severity: string
-          percentual_atual: number
-          contexto?: Json | null
-          detected_at?: string
-          tratado?: boolean
-          tratado_em?: string | null
-          tratado_por?: number | null
-          comentario_tratamento?: string | null
-          created_at?: string
-        }
-        Update: {
-          id?: string
-          tipo_monitoramento?: string
-          identificador_item?: string
-          alert_type?: string
-          severity?: string
-          percentual_atual?: number
-          contexto?: Json | null
-          detected_at?: string
-          tratado?: boolean
-          tratado_em?: string | null
-          tratado_por?: number | null
-          comentario_tratamento?: string | null
-          created_at?: string
-        }
-        Relationships: [
-          {
-            foreignKeyName: "monitoring_alerts_tratado_por_fkey"
-            columns: ["tratado_por"]
+            foreignKeyName: "role_audit_log_changed_by_fkey"
+            columns: ["changed_by"]
             isOneToOne: false
             referencedRelation: "users"
             referencedColumns: ["id"]
-          }
-        ]
-      }
-      role_audit_log: {
-        Row: {
-          id: string
-          role_id: number | null
-          changed_by: number | null
-          changed_at: string
-          action: string
-          old_values: Json | null
-          new_values: Json | null
-        }
-        Insert: {
-          id?: string
-          role_id?: number | null
-          changed_by?: number | null
-          changed_at?: string
-          action: string
-          old_values?: Json | null
-          new_values?: Json | null
-        }
-        Update: {
-          id?: string
-          role_id?: number | null
-          changed_by?: number | null
-          changed_at?: string
-          action?: string
-          old_values?: Json | null
-          new_values?: Json | null
-        }
-        Relationships: [
+          },
           {
             foreignKeyName: "role_audit_log_role_id_fkey"
             columns: ["role_id"]
@@ -286,33 +251,68 @@ export type Database = {
             referencedRelation: "roles"
             referencedColumns: ["id"]
           },
+        ]
+      }
+      role_permissions: {
+        Row: {
+          created_at: string | null
+          enabled: boolean | null
+          id: string
+          permission_key: string | null
+          role_id: number | null
+          updated_at: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          enabled?: boolean | null
+          id?: string
+          permission_key?: string | null
+          role_id?: number | null
+          updated_at?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          enabled?: boolean | null
+          id?: string
+          permission_key?: string | null
+          role_id?: number | null
+          updated_at?: string | null
+        }
+        Relationships: [
           {
-            foreignKeyName: "role_audit_log_changed_by_fkey"
-            columns: ["changed_by"]
+            foreignKeyName: "role_permissions_permission_key_fkey"
+            columns: ["permission_key"]
             isOneToOne: false
-            referencedRelation: "users"
+            referencedRelation: "permissions"
+            referencedColumns: ["key"]
+          },
+          {
+            foreignKeyName: "role_permissions_role_id_fkey"
+            columns: ["role_id"]
+            isOneToOne: false
+            referencedRelation: "roles"
             referencedColumns: ["id"]
-          }
+          },
         ]
       }
       roles: {
         Row: {
           description: string | null
           id: number
+          is_active: boolean | null
           name: string
-          is_active: boolean
         }
         Insert: {
           description?: string | null
           id?: number
+          is_active?: boolean | null
           name: string
-          is_active?: boolean
         }
         Update: {
           description?: string | null
           id?: number
+          is_active?: boolean | null
           name?: string
-          is_active?: boolean
         }
         Relationships: []
       }
@@ -357,51 +357,165 @@ export type Database = {
           },
         ]
       }
+      sla_detalhado_rn: {
+        Row: {
+          categoria_perda_sla: string | null
+          cidade: string | null
+          conta_atribuida: string | null
+          created_at: string
+          data_criacao: string | null
+          data_fechamento: string | null
+          dentro: number
+          dentro_fora: string
+          dia: number | null
+          divisao_perda_sla: string | null
+          empresa: string | null
+          fila: string | null
+          fora: number
+          id: string
+          mes: string | null
+          motivo_perda_sla: string | null
+          nome_projeto: string | null
+          numero_referencia: string | null
+          numero_serie: string | null
+          observacao_perda_sla: string | null
+          produto_descricao: string | null
+          qtde_pausa: number
+          sla_contratual: string | null
+          sla_perdido: string | null
+          sla_solucao: number | null
+          solucao_hardware: string | null
+          status: string | null
+          tipo_incidente: string | null
+          tipo_problema_hardware: string | null
+          tipo_sla: string | null
+          uf: string | null
+        }
+        Insert: {
+          categoria_perda_sla?: string | null
+          cidade?: string | null
+          conta_atribuida?: string | null
+          created_at?: string
+          data_criacao?: string | null
+          data_fechamento?: string | null
+          dentro?: number
+          dentro_fora: string
+          dia?: number | null
+          divisao_perda_sla?: string | null
+          empresa?: string | null
+          fila?: string | null
+          fora?: number
+          id?: string
+          mes?: string | null
+          motivo_perda_sla?: string | null
+          nome_projeto?: string | null
+          numero_referencia?: string | null
+          numero_serie?: string | null
+          observacao_perda_sla?: string | null
+          produto_descricao?: string | null
+          qtde_pausa?: number
+          sla_contratual?: string | null
+          sla_perdido?: string | null
+          sla_solucao?: number | null
+          solucao_hardware?: string | null
+          status?: string | null
+          tipo_incidente?: string | null
+          tipo_problema_hardware?: string | null
+          tipo_sla?: string | null
+          uf?: string | null
+        }
+        Update: {
+          categoria_perda_sla?: string | null
+          cidade?: string | null
+          conta_atribuida?: string | null
+          created_at?: string
+          data_criacao?: string | null
+          data_fechamento?: string | null
+          dentro?: number
+          dentro_fora?: string
+          dia?: number | null
+          divisao_perda_sla?: string | null
+          empresa?: string | null
+          fila?: string | null
+          fora?: number
+          id?: string
+          mes?: string | null
+          motivo_perda_sla?: string | null
+          nome_projeto?: string | null
+          numero_referencia?: string | null
+          numero_serie?: string | null
+          observacao_perda_sla?: string | null
+          produto_descricao?: string | null
+          qtde_pausa?: number
+          sla_contratual?: string | null
+          sla_perdido?: string | null
+          sla_solucao?: number | null
+          solucao_hardware?: string | null
+          status?: string | null
+          tipo_incidente?: string | null
+          tipo_problema_hardware?: string | null
+          tipo_sla?: string | null
+          uf?: string | null
+        }
+        Relationships: []
+      }
       sla_fila_rn: {
         Row: {
-          created_at: string
+          created_at: string | null
           dentro: number
           fora: number
           id: number
           nome_fila: string
+          percentual: number
+          total: number
         }
         Insert: {
-          created_at?: string
+          created_at?: string | null
           dentro?: number
           fora?: number
           id?: number
           nome_fila: string
+          percentual?: number
+          total?: number
         }
         Update: {
-          created_at?: string
+          created_at?: string | null
           dentro?: number
           fora?: number
           id?: number
           nome_fila?: string
+          percentual?: number
+          total?: number
         }
         Relationships: []
       }
       sla_projetos_rn: {
         Row: {
-          created_at: string
+          created_at: string | null
           dentro: number
           fora: number
           id: number
           nome_projeto: string
+          percentual: number
+          total: number
         }
         Insert: {
-          created_at?: string
+          created_at?: string | null
           dentro?: number
           fora?: number
           id?: number
           nome_projeto: string
+          percentual?: number
+          total?: number
         }
         Update: {
-          created_at?: string
+          created_at?: string | null
           dentro?: number
           fora?: number
           id?: number
           nome_projeto?: string
+          percentual?: number
+          total?: number
         }
         Relationships: []
       }
@@ -499,7 +613,8 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
-      [_ in never]: never
+      fn_generate_sla_snapshots: { Args: never; Returns: undefined }
+      record_sla_snapshot_internal: { Args: never; Returns: undefined }
     }
     Enums: {
       [_ in never]: never
@@ -516,116 +631,116 @@ type DefaultSchema = DatabaseWithoutInternals[Extract<keyof Database, "public">]
 
 export type Tables<
   DefaultSchemaTableNameOrOptions extends
-  | keyof (DefaultSchema["Tables"] & DefaultSchema["Views"])
-  | { schema: keyof DatabaseWithoutInternals },
+    | keyof (DefaultSchema["Tables"] & DefaultSchema["Views"])
+    | { schema: keyof DatabaseWithoutInternals },
   TableName extends DefaultSchemaTableNameOrOptions extends {
     schema: keyof DatabaseWithoutInternals
   }
-  ? keyof (DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Tables"] &
-    DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Views"])
-  : never = never,
+    ? keyof (DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Tables"] &
+        DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Views"])
+    : never = never,
 > = DefaultSchemaTableNameOrOptions extends {
   schema: keyof DatabaseWithoutInternals
 }
   ? (DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Tables"] &
-    DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Views"])[TableName] extends {
+      DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Views"])[TableName] extends {
       Row: infer R
     }
-  ? R
-  : never
+    ? R
+    : never
   : DefaultSchemaTableNameOrOptions extends keyof (DefaultSchema["Tables"] &
-    DefaultSchema["Views"])
-  ? (DefaultSchema["Tables"] &
-    DefaultSchema["Views"])[DefaultSchemaTableNameOrOptions] extends {
-      Row: infer R
-    }
-  ? R
-  : never
-  : never
+        DefaultSchema["Views"])
+    ? (DefaultSchema["Tables"] &
+        DefaultSchema["Views"])[DefaultSchemaTableNameOrOptions] extends {
+        Row: infer R
+      }
+      ? R
+      : never
+    : never
 
 export type TablesInsert<
   DefaultSchemaTableNameOrOptions extends
-  | keyof DefaultSchema["Tables"]
-  | { schema: keyof DatabaseWithoutInternals },
+    | keyof DefaultSchema["Tables"]
+    | { schema: keyof DatabaseWithoutInternals },
   TableName extends DefaultSchemaTableNameOrOptions extends {
     schema: keyof DatabaseWithoutInternals
   }
-  ? keyof DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Tables"]
-  : never = never,
+    ? keyof DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Tables"]
+    : never = never,
 > = DefaultSchemaTableNameOrOptions extends {
   schema: keyof DatabaseWithoutInternals
 }
   ? DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Tables"][TableName] extends {
-    Insert: infer I
-  }
-  ? I
-  : never
+      Insert: infer I
+    }
+    ? I
+    : never
   : DefaultSchemaTableNameOrOptions extends keyof DefaultSchema["Tables"]
-  ? DefaultSchema["Tables"][DefaultSchemaTableNameOrOptions] extends {
-    Insert: infer I
-  }
-  ? I
-  : never
-  : never
+    ? DefaultSchema["Tables"][DefaultSchemaTableNameOrOptions] extends {
+        Insert: infer I
+      }
+      ? I
+      : never
+    : never
 
 export type TablesUpdate<
   DefaultSchemaTableNameOrOptions extends
-  | keyof DefaultSchema["Tables"]
-  | { schema: keyof DatabaseWithoutInternals },
+    | keyof DefaultSchema["Tables"]
+    | { schema: keyof DatabaseWithoutInternals },
   TableName extends DefaultSchemaTableNameOrOptions extends {
     schema: keyof DatabaseWithoutInternals
   }
-  ? keyof DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Tables"]
-  : never = never,
+    ? keyof DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Tables"]
+    : never = never,
 > = DefaultSchemaTableNameOrOptions extends {
   schema: keyof DatabaseWithoutInternals
 }
   ? DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Tables"][TableName] extends {
-    Update: infer U
-  }
-  ? U
-  : never
+      Update: infer U
+    }
+    ? U
+    : never
   : DefaultSchemaTableNameOrOptions extends keyof DefaultSchema["Tables"]
-  ? DefaultSchema["Tables"][DefaultSchemaTableNameOrOptions] extends {
-    Update: infer U
-  }
-  ? U
-  : never
-  : never
+    ? DefaultSchema["Tables"][DefaultSchemaTableNameOrOptions] extends {
+        Update: infer U
+      }
+      ? U
+      : never
+    : never
 
 export type Enums<
   DefaultSchemaEnumNameOrOptions extends
-  | keyof DefaultSchema["Enums"]
-  | { schema: keyof DatabaseWithoutInternals },
+    | keyof DefaultSchema["Enums"]
+    | { schema: keyof DatabaseWithoutInternals },
   EnumName extends DefaultSchemaEnumNameOrOptions extends {
     schema: keyof DatabaseWithoutInternals
   }
-  ? keyof DatabaseWithoutInternals[DefaultSchemaEnumNameOrOptions["schema"]]["Enums"]
-  : never = never,
+    ? keyof DatabaseWithoutInternals[DefaultSchemaEnumNameOrOptions["schema"]]["Enums"]
+    : never = never,
 > = DefaultSchemaEnumNameOrOptions extends {
   schema: keyof DatabaseWithoutInternals
 }
   ? DatabaseWithoutInternals[DefaultSchemaEnumNameOrOptions["schema"]]["Enums"][EnumName]
   : DefaultSchemaEnumNameOrOptions extends keyof DefaultSchema["Enums"]
-  ? DefaultSchema["Enums"][DefaultSchemaEnumNameOrOptions]
-  : never
+    ? DefaultSchema["Enums"][DefaultSchemaEnumNameOrOptions]
+    : never
 
 export type CompositeTypes<
   PublicCompositeTypeNameOrOptions extends
-  | keyof DefaultSchema["CompositeTypes"]
-  | { schema: keyof DatabaseWithoutInternals },
+    | keyof DefaultSchema["CompositeTypes"]
+    | { schema: keyof DatabaseWithoutInternals },
   CompositeTypeName extends PublicCompositeTypeNameOrOptions extends {
     schema: keyof DatabaseWithoutInternals
   }
-  ? keyof DatabaseWithoutInternals[PublicCompositeTypeNameOrOptions["schema"]]["CompositeTypes"]
-  : never = never,
+    ? keyof DatabaseWithoutInternals[PublicCompositeTypeNameOrOptions["schema"]]["CompositeTypes"]
+    : never = never,
 > = PublicCompositeTypeNameOrOptions extends {
   schema: keyof DatabaseWithoutInternals
 }
   ? DatabaseWithoutInternals[PublicCompositeTypeNameOrOptions["schema"]]["CompositeTypes"][CompositeTypeName]
   : PublicCompositeTypeNameOrOptions extends keyof DefaultSchema["CompositeTypes"]
-  ? DefaultSchema["CompositeTypes"][PublicCompositeTypeNameOrOptions]
-  : never
+    ? DefaultSchema["CompositeTypes"][PublicCompositeTypeNameOrOptions]
+    : never
 
 export const Constants = {
   public: {
