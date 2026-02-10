@@ -614,6 +614,19 @@ export type Database = {
     }
     Functions: {
       fn_generate_sla_snapshots: { Args: never; Returns: undefined }
+      get_latest_sla_records: {
+        Args: { p_records_per_item?: number; p_type: string }
+        Returns: {
+          created_at: string
+          dentro: number
+          fora: number
+          id: number
+          nome: string
+          percentual: number
+          row_num: number
+          total: number
+        }[]
+      }
       get_mps_history: {
         Args: { end_date: string; start_date: string }
         Returns: {
