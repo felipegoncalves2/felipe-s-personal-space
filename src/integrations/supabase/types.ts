@@ -637,6 +637,22 @@ export type Database = {
           total_sem_monitoramento: number
         }[]
       }
+      get_sla_history: {
+        Args: {
+          p_days?: number
+          p_granularity?: string
+          p_identifier: string
+          p_type: string
+        }
+        Returns: {
+          dentro: number
+          display_date: string
+          fora: number
+          percentual: number
+          period_key: string
+          recorded_at: string
+        }[]
+      }
       record_sla_snapshot_internal: { Args: never; Returns: undefined }
     }
     Enums: {
