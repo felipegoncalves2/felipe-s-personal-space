@@ -27,7 +27,8 @@ export function useSLAData(type: SLAType) {
       const { data: rawData, error: fetchError } = await supabase
         .from(tableName)
         .select('*')
-        .order('created_at', { ascending: false });
+        .order('created_at', { ascending: false })
+        .limit(5000);
 
       if (fetchError) throw fetchError;
 
@@ -66,7 +67,7 @@ export function useSLAData(type: SLAType) {
         const dentro = current.dentro || 0;
         const fora = current.fora || 0;
         const total = dentro + fora;
-        const percentual = total > 0 ? Number(((dentro / total) * 100).toFixed(2)) : 0;
+        const percentual = total > 0 ? Number(((dentro / total) * 100).toFixed(2)) : 100;
 
         // Calculate variation
         let variation = 0;
