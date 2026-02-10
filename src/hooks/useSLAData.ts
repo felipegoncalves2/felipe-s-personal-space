@@ -20,15 +20,11 @@ export function useSLAData(type: SLAType) {
       if (!lastUpdated) setIsLoading(true);
       setError(null);
 
-      const tableName = type === 'fila' ? 'sla_fila_rn' : 'sla_projetos_rn';
       const monitorType = type === 'fila' ? 'sla_fila' : 'sla_projeto';
 
-      // 1. Fetch SLA data
+      // 1. Fetch SLA data using optimized RPC (only latest 2 per item)
       const { data: rawData, error: fetchError } = await supabase
-        .from(tableName)
-        .select('*')
-        .order('created_at', { ascending: false })
-        .limit(5000);
+        .rpc('get_latest_sla_records', { p_type: type, p_records_per_item: 2 });
 
       if (fetchError) throw fetchError;
 
@@ -41,28 +37,21 @@ export function useSLAData(type: SLAType) {
 
       if (alertsError) console.error('Error fetching active alerts:', alertsError);
 
-      // Group records by name and get latest + previous
+      // Group records by name (already ordered by nome, row_num from RPC)
       const recordsByName = new Map<string, Array<any>>();
 
       for (const record of rawData || []) {
-        const name = type === 'fila'
-          ? (record as { nome_fila: string }).nome_fila
-          : (record as { nome_projeto: string }).nome_projeto;
-
+        const name = record.nome;
         if (!recordsByName.has(name)) {
           recordsByName.set(name, []);
         }
-
-        const records = recordsByName.get(name)!;
-        if (records.length < 2) {
-          records.push(record);
-        }
+        recordsByName.get(name)!.push(record);
       }
 
       // Transform to SLAData format
       const processedData: SLAData[] = Array.from(recordsByName.entries()).map(([name, records]) => {
-        const current = records[0];
-        const previous = records[1];
+        const current = records[0]; // row_num=1 (latest)
+        const previous = records[1]; // row_num=2
 
         const dentro = current.dentro || 0;
         const fora = current.fora || 0;
@@ -76,7 +65,7 @@ export function useSLAData(type: SLAType) {
           const prevDentro = previous.dentro || 0;
           const prevFora = previous.fora || 0;
           const prevTotal = prevDentro + prevFora;
-          prevPercentual = prevTotal > 0 ? (prevDentro / prevTotal) * 100 : 0;
+          prevPercentual = prevTotal > 0 ? (prevDentro / prevTotal) * 100 : 100;
           variation = percentual - prevPercentual;
         }
 
