@@ -47,7 +47,8 @@ export function SLAAnalysis() {
             motivos: getFilteredCounts(filteredDetailedData, 'motivo_perda_sla'),
             categorias: getFilteredCounts(filteredDetailedData, 'categoria_perda_sla'),
             incidentes: getFilteredCounts(filteredDetailedData, 'tipo_incidente'),
-            divisoes: getFilteredCounts(filteredDetailedData, 'divisao_perda_sla')
+            divisoes: getFilteredCounts(filteredDetailedData, 'divisao_perda_sla'),
+            slaPorUf: getFilteredCounts(filteredDetailedData, 'uf')
         }
         : originalCauses;
 

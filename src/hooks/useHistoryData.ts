@@ -93,7 +93,7 @@ export function useHistoryData({ type, identifier, isOpen, granularity = 'daily'
                     const dentro = Number(item.dentro);
                     const fora = Number(item.fora);
                     const total = dentro + fora;
-                    percentual = total > 0 ? (dentro / total) * 100 : 0;
+                    percentual = total > 0 ? (dentro / total) * 100 : 100;
                 }
 
                 processedData.push({
