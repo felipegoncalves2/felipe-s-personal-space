@@ -56,7 +56,7 @@ export function DetailedSLATable({ data }: DetailedSLATableProps) {
             const search = searchTerm.toLowerCase();
             result = result.filter(d =>
                 (d.numero_referencia?.toLowerCase().includes(search)) ||
-                (d.observacao?.toLowerCase().includes(search))
+                (d.observacao_perda_sla?.toLowerCase().includes(search))
             );
         }
 
@@ -107,7 +107,7 @@ export function DetailedSLATable({ data }: DetailedSLATableProps) {
             d.motivo_perda_sla || '---',
             d.categoria_perda_sla || '---',
             d.data_criacao ? format(new Date(d.data_criacao), 'dd/MM/yyyy HH:mm') : '---',
-            (d.observacao || '---').replace(/,/g, ';')
+            (d.observacao_perda_sla || '---').replace(/,/g, ';')
         ]);
 
         const csvContent = [
@@ -268,18 +268,22 @@ export function DetailedSLATable({ data }: DetailedSLATableProps) {
                                             </span>
                                         </TableCell>
                                         <TableCell className="max-w-[200px]">
-                                            <TooltipProvider>
-                                                <Tooltip>
-                                                    <TooltipTrigger asChild>
-                                                        <p className="text-[10px] text-muted-foreground truncate hover:text-foreground transition-colors cursor-help">
-                                                            {row.observacao || 'Sem observação'}
-                                                        </p>
-                                                    </TooltipTrigger>
-                                                    <TooltipContent side="top" className="max-w-[300px] bg-slate-900 border-white/10 text-xs p-3">
-                                                        <p className="leading-relaxed">{row.observacao || 'Nenhuma observação registrada para este chamado.'}</p>
-                                                    </TooltipContent>
-                                                </Tooltip>
-                                            </TooltipProvider>
+                                            {row.sla_perdido === 'Sim' ? (
+                                                <TooltipProvider>
+                                                    <Tooltip>
+                                                        <TooltipTrigger asChild>
+                                                            <p className="text-[10px] text-muted-foreground truncate hover:text-foreground transition-colors cursor-help max-w-[200px]">
+                                                                {row.observacao_perda_sla || 'Sem observação'}
+                                                            </p>
+                                                        </TooltipTrigger>
+                                                        <TooltipContent side="top" className="max-w-[350px] bg-slate-900 border-white/10 text-xs p-3">
+                                                            <p className="leading-relaxed">{row.observacao_perda_sla || 'Nenhuma observação registrada para este chamado.'}</p>
+                                                        </TooltipContent>
+                                                    </Tooltip>
+                                                </TooltipProvider>
+                                            ) : (
+                                                <span className="text-[10px] text-muted-foreground/50">—</span>
+                                            )}
                                         </TableCell>
                                         <TableCell>
                                             <div className="flex flex-col">
