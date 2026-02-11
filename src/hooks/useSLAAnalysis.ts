@@ -25,6 +25,8 @@ export interface HistoricalPoint {
 export interface CauseImpact {
     name: string;
     value: number;
+    total?: number;
+    lost?: number;
 }
 
 export function useSLAAnalysis(type: 'fila' | 'projetos') {
@@ -173,8 +175,10 @@ export function useSLAAnalysis(type: 'fila' | 'projetos') {
 
             const slaPorUf = Object.entries(ufStats).map(([name, stats]) => ({
                 name,
-                value: parseFloat((((stats.total - stats.lost) / stats.total) * 100).toFixed(2))
-            })).sort((a, b) => a.value - b.value); // Sort ascending (worst SLA first as requested)
+                value: parseFloat((((stats.total - stats.lost) / stats.total) * 100).toFixed(2)),
+                total: stats.total,
+                lost: stats.lost
+            })).sort((a, b) => a.value - b.value);
 
             setCauses({
                 motivos: getCounts('motivo_perda_sla').slice(0, 10),

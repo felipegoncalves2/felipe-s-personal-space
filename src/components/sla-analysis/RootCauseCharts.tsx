@@ -55,13 +55,18 @@ export function RootCauseCharts({ causes }: RootCauseChartsProps) {
                                     tick={{ fill: 'rgba(148, 163, 184, 0.8)' }}
                                 />
                                 <Tooltip
+                                    cursor={{ fill: 'rgba(255, 255, 255, 0.05)' }}
                                     contentStyle={{
                                         background: '#0f172a',
                                         border: '1px solid rgba(255,255,255,0.1)',
-                                        borderRadius: '8px',
+                                        borderRadius: '6px',
                                         fontSize: '11px',
-                                        color: '#cbd5e1'
+                                        color: '#ffffff',
+                                        padding: '8px',
+                                        boxShadow: '0 4px 12px rgba(0,0,0,0.3)'
                                     }}
+                                    labelStyle={{ color: '#ffffff', fontWeight: 'bold', marginBottom: '4px' }}
+                                    itemStyle={{ color: '#ffffff' }}
                                 />
                                 <Bar dataKey="value" radius={[4, 4, 0, 0]} barSize={30}>
                                     {causes.categorias.map((_, index) => (
@@ -105,14 +110,28 @@ export function RootCauseCharts({ causes }: RootCauseChartsProps) {
                                 />
                                 <Tooltip
                                     cursor={{ fill: 'rgba(255, 255, 255, 0.05)' }}
-                                    contentStyle={{
-                                        background: '#0f172a',
-                                        border: '1px solid rgba(255,255,255,0.1)',
-                                        borderRadius: '8px',
-                                        fontSize: '11px',
-                                        color: '#cbd5e1'
+                                    content={({ active, payload }) => {
+                                        if (!active || !payload?.length) return null;
+                                        const data = payload[0].payload;
+                                        const slaColor = data.value < 80 ? '#f43f5e' : data.value < 95 ? '#eab308' : '#22c55e';
+                                        return (
+                                            <div style={{
+                                                background: '#0f172a',
+                                                border: '1px solid rgba(255,255,255,0.1)',
+                                                borderRadius: '6px',
+                                                padding: '10px 14px',
+                                                boxShadow: '0 4px 12px rgba(0,0,0,0.3)',
+                                                color: '#ffffff',
+                                                fontSize: '12px',
+                                                lineHeight: '1.6'
+                                            }}>
+                                                <div style={{ fontWeight: 'bold', fontSize: '14px', marginBottom: '4px' }}>{data.name}</div>
+                                                <div>SLA: <span style={{ color: slaColor, fontWeight: 'bold' }}>{data.value.toFixed(2)}%</span></div>
+                                                <div>Total: {data.total ?? '—'} chamados</div>
+                                                <div>Perdidos: {data.lost ?? '—'}</div>
+                                            </div>
+                                        );
                                     }}
-                                    formatter={(val: number) => [`${val}%`, 'SLA']}
                                 />
                                 <Bar dataKey="value" radius={[4, 4, 0, 0]} barSize={40}>
                                     {causes.slaPorUf.map((entry, index) => {
