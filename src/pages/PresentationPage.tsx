@@ -80,11 +80,11 @@ export default function PresentationPage() {
     }
   }, [activeTab, mpsData, slaFilaData, slaProjetosData, mpsLoading, slaFilaLoading, slaProjetosLoading]);
 
-  // Filter data based on settings
+  // Filter data based on settings and sort alphabetically for SLA
   const filteredData = useMemo(() => {
     if (!rawData.length) return [];
 
-    return rawData.filter((item) => {
+    const filtered = rawData.filter((item) => {
       const percentual = isSLAData(item) ? item.percentual : (item as MonitoringData).percentual;
 
       // Filter by percentage range
@@ -108,7 +108,18 @@ export default function PresentationPage() {
 
       return true;
     });
-  }, [rawData, settings]);
+
+    // Sort SLA data alphabetically
+    if (activeTab === 'sla-fila' || activeTab === 'sla-projetos') {
+      filtered.sort((a, b) => {
+        const nameA = isSLAData(a) ? a.nome : (a as MonitoringData).empresa;
+        const nameB = isSLAData(b) ? b.nome : (b as MonitoringData).empresa;
+        return nameA.localeCompare(nameB, 'pt-BR');
+      });
+    }
+
+    return filtered;
+  }, [rawData, settings, activeTab]);
 
   // Calculate Average KPI (Weighted for MPS, Simple for SLA)
   const averageKPI = useMemo(() => {
