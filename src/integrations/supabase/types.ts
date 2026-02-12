@@ -653,6 +653,29 @@ export type Database = {
           recorded_at: string
         }[]
       }
+      get_sla_projetos_monthly_list: {
+        Args: { p_page_num?: number; p_page_size?: number; p_search?: string }
+        Returns: {
+          dentro: number
+          fora: number
+          nome_projeto: string
+          percentual: number
+          total: number
+          total_count: number
+        }[]
+      }
+      get_sla_projetos_monthly_summary: {
+        Args: { p_threshold_attention?: number; p_threshold_excellent?: number }
+        Returns: {
+          average_percentual: number
+          count_attention: number
+          count_critical: number
+          count_excellent: number
+          total_dentro: number
+          total_fora: number
+          total_geral: number
+        }[]
+      }
       record_sla_snapshot_internal: { Args: never; Returns: undefined }
     }
     Enums: {

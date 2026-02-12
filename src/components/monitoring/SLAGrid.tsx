@@ -1,7 +1,7 @@
 import { useState, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
-import { Search, RefreshCw, Filter, ArrowUpDown, Loader2, Play } from 'lucide-react';
+import { Search, RefreshCw, Filter, Loader2, Play } from 'lucide-react';
 import { SLADonutChart } from './SLADonutChart';
 import { HistoryModal } from './HistoryModal';
 import { useSLAData } from '@/hooks/useSLAData';
@@ -16,7 +16,6 @@ import {
 } from '@/components/ui/select';
 import { usePresentationSettings } from '@/hooks/usePresentationSettings';
 
-type SortOrder = 'asc' | 'desc';
 type StatusFilter = 'all' | 'green' | 'yellow' | 'red';
 type SLAType = 'fila' | 'projetos';
 
@@ -31,7 +30,6 @@ export function SLAGrid({ type }: SLAGridProps) {
   const { data, isLoading, error, lastUpdated, refetch } = useSLAData(type);
   const { settings } = usePresentationSettings(type === 'fila' ? 'sla_fila' : 'sla_projetos');
   const [searchTerm, setSearchTerm] = useState('');
-  const [sortOrder, setSortOrder] = useState<SortOrder>('desc');
   const [statusFilter, setStatusFilter] = useState<StatusFilter>('all');
   const [itemsPerPage, setItemsPerPage] = useState(10);
   const [currentPage, setCurrentPage] = useState(1);
@@ -60,14 +58,11 @@ export function SLAGrid({ type }: SLAGridProps) {
       });
     }
 
-    // Sort by percentage
-    result.sort((a, b) => {
-      if (sortOrder === 'asc') return a.percentual - b.percentual;
-      return b.percentual - a.percentual;
-    });
+    // Sort alphabetically by name
+    result.sort((a, b) => a.nome.localeCompare(b.nome, 'pt-BR'));
 
     return result;
-  }, [data, searchTerm, sortOrder, statusFilter]);
+  }, [data, searchTerm, statusFilter]);
 
   const paginatedData = useMemo(() => {
     const start = (currentPage - 1) * itemsPerPage;
@@ -226,16 +221,8 @@ export function SLAGrid({ type }: SLAGridProps) {
             </SelectContent>
           </Select>
 
-          {/* Sort */}
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={() => setSortOrder(sortOrder === 'asc' ? 'desc' : 'asc')}
-            className="bg-secondary/50"
-          >
-            <ArrowUpDown className="mr-2 h-4 w-4" />
-            {sortOrder === 'desc' ? 'Maior %' : 'Menor %'}
-          </Button>
+
+
 
           {/* Items per page */}
           <Select
