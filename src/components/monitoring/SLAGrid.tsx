@@ -51,6 +51,8 @@ export function SLAGrid({ type }: SLAGridProps) {
       const thresholdExcellent = settings.threshold_excellent ?? 98;
       const thresholdAttention = settings.threshold_attention ?? 80;
       result = result.filter((item) => {
+        const thresholdExcellent = item.meta_excelente ?? settings.threshold_excellent ?? 98;
+        const thresholdAttention = item.meta_atencao ?? settings.threshold_attention ?? 80;
         if (statusFilter === 'green') return item.percentual >= thresholdExcellent;
         if (statusFilter === 'yellow') return item.percentual >= thresholdAttention && item.percentual < thresholdExcellent;
         if (statusFilter === 'red') return item.percentual < thresholdAttention;
@@ -94,9 +96,9 @@ export function SLAGrid({ type }: SLAGridProps) {
     }
 
     return {
-      green: data.filter((d) => d.percentual >= thresholdExcellent).length,
-      yellow: data.filter((d) => d.percentual >= thresholdAttention && d.percentual < thresholdExcellent).length,
-      red: data.filter((d) => d.percentual < thresholdAttention).length,
+      green: data.filter((d) => d.percentual >= (d.meta_excelente ?? settings.threshold_excellent ?? 98)).length,
+      yellow: data.filter((d) => d.percentual >= (d.meta_atencao ?? settings.threshold_attention ?? 80) && d.percentual < (d.meta_excelente ?? settings.threshold_excellent ?? 98)).length,
+      red: data.filter((d) => d.percentual < (d.meta_atencao ?? settings.threshold_attention ?? 80)).length,
       average: averagePercentual,
       totalDentro,
       totalFora
@@ -129,7 +131,7 @@ export function SLAGrid({ type }: SLAGridProps) {
             className="glass rounded-lg p-4 text-center border-l-4 border-l-primary"
           >
             <div className="text-2xl font-bold text-primary">{summaryStats.average.toFixed(2)}%</div>
-            <div className="text-xs text-muted-foreground mt-1">Média Geral</div>
+            <div className="text-[10px] text-muted-foreground uppercase tracking-widest mt-1">Média Geral</div>
           </motion.div>
         )}
 
@@ -297,8 +299,8 @@ export function SLAGrid({ type }: SLAGridProps) {
               delay={index * 0.05}
               trend={item.trend}
               variation={item.variation}
-              thresholdExcellent={settings.threshold_excellent ?? 98}
-              thresholdAttention={settings.threshold_attention ?? 80}
+              thresholdExcellent={item.meta_excelente ?? settings.threshold_excellent ?? 98}
+              thresholdAttention={item.meta_atencao ?? settings.threshold_attention ?? 80}
               onClick={() => setSelectedItem({ nome: item.nome })}
             />
           ))}

@@ -21,6 +21,7 @@ interface DonutChartProps {
     label: string;
   };
   onClick?: () => void;
+  onDoubleClick?: () => void;
   thresholdExcellent?: number;
   thresholdAttention?: number;
 }
@@ -39,6 +40,7 @@ export function DonutChart({
   anomaly,
   comparison,
   onClick,
+  onDoubleClick,
   thresholdExcellent = 98,
   thresholdAttention = 80,
 }: DonutChartProps) {
@@ -86,7 +88,8 @@ export function DonutChart({
       transition={{ delay, duration: 0.4, ease: 'easeOut' }}
       whileHover={{ scale: 1.02 }}
       onClick={onClick}
-      className={`glass rounded-xl p-5 transition-all hover:shadow-lg hover:shadow-primary/5 relative flex flex-col items-center ${onClick ? 'cursor-pointer hover:bg-white/5' : ''
+      onDoubleClick={onDoubleClick}
+      className={`glass rounded-xl p-5 transition-all hover:shadow-lg hover:shadow-primary/5 relative flex flex-col items-center ${onClick || onDoubleClick ? 'cursor-pointer hover:bg-white/5' : ''
         } ${anomaly ? 'ring-2 ring-orange-500/50' : ''}`}
     >
       {/* Header section with name and trend */}
@@ -113,9 +116,9 @@ export function DonutChart({
         )}
 
         {/* Limit Alert Badge (Low Percentage) */}
-        {!anomaly && percentage < 80 && (
+        {!anomaly && percentage < thresholdAttention && (
           <div className="mb-2">
-            <AlertBadge type="limit" message="Desempenho Crítico: Abaixo de 80%" />
+            <AlertBadge type="limit" message={`Desempenho Crítico: Abaixo de ${thresholdAttention}%`} />
           </div>
         )}
 

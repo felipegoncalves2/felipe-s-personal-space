@@ -21,10 +21,12 @@ export function useSLAData(type: SLAType) {
       setError(null);
 
       const monitorType = type === 'fila' ? 'sla_fila' : 'sla_projeto';
+      const mvName = type === 'fila' ? 'mv_sla_fila_rn' : 'mv_sla_projetos_rn';
 
-      // 1. Fetch SLA data using optimized RPC (only latest 2 per item)
-      const { data: rawData, error: fetchError } = await supabase
-        .rpc('get_latest_sla_records', { p_type: type, p_records_per_item: 2 });
+      // 1. Fetch SLA data from Materialized View
+      const { data: mvData, error: fetchError } = await supabase
+        .from(mvName as any)
+        .select('*');
 
       if (fetchError) throw fetchError;
 
@@ -37,77 +39,64 @@ export function useSLAData(type: SLAType) {
 
       if (alertsError) console.error('Error fetching active alerts:', alertsError);
 
-      // Group records by name (already ordered by nome, row_num from RPC)
-      const recordsByName = new Map<string, Array<any>>();
+      // 2.5 Fetch custom metas
+      const metaType = type === 'fila' ? 'fila' : 'projeto';
+      const { data: customMetas, error: metasError } = await supabase
+        .from('sla_metas' as any)
+        .select('*');
 
-      for (const record of rawData || []) {
-        const name = record.nome;
-        if (!recordsByName.has(name)) {
-          recordsByName.set(name, []);
-        }
-        recordsByName.get(name)!.push(record);
+      if (metasError) console.error('Error fetching custom metas:', metasError);
+
+      // Group metas by identifier
+      const metasByIdentifier = new Map<string, any>();
+      for (const meta of (customMetas as any[]) || []) {
+        metasByIdentifier.set(meta.identificador, meta);
       }
 
       // Transform to SLAData format
-      const processedData: SLAData[] = Array.from(recordsByName.entries()).map(([name, records]) => {
-        const current = records[0]; // row_num=1 (latest)
-        const previous = records[1]; // row_num=2
+      const processedData: SLAData[] = (mvData || []).map((record: any, index: number) => {
+        const name = type === 'fila' ? record.fila : record.nome_projeto;
 
-        const dentro = current.dentro || 0;
-        const fora = current.fora || 0;
-        const total = dentro + fora;
-        const percentual = total > 0 ? Number(((dentro / total) * 100).toFixed(2)) : 100;
+        // MV data is already aggregated and prepared
+        const dentro = Number(record.dentro || 0);
+        const fora = Number(record.fora || 0);
+        const total = Number(record.total || 0);
+        const percentual = Number(record.percentual || 0);
 
-        // Calculate variation
-        let variation = 0;
-        let prevPercentual = null;
-        if (previous) {
-          const prevDentro = previous.dentro || 0;
-          const prevFora = previous.fora || 0;
-          const prevTotal = prevDentro + prevFora;
-          prevPercentual = prevTotal > 0 ? (prevDentro / prevTotal) * 100 : 100;
-          variation = percentual - prevPercentual;
-        }
+        // Get custom metas or fallback
+        const meta = metasByIdentifier.get(name);
+        const metaExcelente = meta?.meta_excelente ?? 98;
+        const metaAtencao = meta?.meta_atencao ?? 80;
 
-        // LOCAL DETECTION for persistence
-        let localTrend = calculateTrend(percentual, prevPercentual);
-
-        // PERSIST new alerts
-        if (localTrend === 'down') {
-          persistAlert({
-            tipo_monitoramento: monitorType,
-            identificador_item: name,
-            alert_type: 'tendencia',
-            severity: 'warning',
-            percentual_atual: percentual,
-            contexto: { trend: localTrend }
-          });
-        }
-
-        if (percentual < 80) {
+        if (percentual < metaAtencao) {
           persistAlert({
             tipo_monitoramento: monitorType,
             identificador_item: name,
             alert_type: 'limite',
             severity: 'critical',
             percentual_atual: percentual,
-            contexto: { reason: 'Percentual abaixo do limite de 80%' }
+            contexto: { reason: `Percentual abaixo da meta de atenção de ${metaAtencao}%` }
           });
         }
 
         // DISPLAY state: Merge with current ACTIVE alerts in DB
         const itemAlerts = activeAlerts?.filter(a => a.identificador_item === name) || [];
 
+        // Note: Trend and Variation are not available in the monthly snapshot MV
+        // We rely on active alerts for 'trend' overrides if needed
+
         return {
-          id: current.id,
+          id: index, // MV doesn't have a stable ID, using index for key
           nome: name,
           dentro,
           fora,
           total,
           percentual,
-          trend: itemAlerts.some(a => a.alert_type === 'tendencia') ? 'down' : (variation > 0 ? 'up' : 'stable'),
-          variation,
-          created_at: current.created_at
+          trend: itemAlerts.some(a => a.alert_type === 'tendencia') ? 'down' : 'stable',
+          variation: 0,
+          created_at: new Date().toISOString(), // Snapshot time
+          meta_excelente: metaExcelente,
+          meta_atencao: metaAtencao
         };
       });
 

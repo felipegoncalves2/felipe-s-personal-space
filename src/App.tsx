@@ -8,6 +8,7 @@ import LoginPage from "./pages/LoginPage";
 import DashboardPage from "./pages/DashboardPage";
 import PresentationPage from "./pages/PresentationPage";
 import NotFound from "./pages/NotFound";
+import { AccessDenied } from "./components/common/AccessDenied";
 
 const queryClient = new QueryClient();
 
@@ -60,9 +61,45 @@ function AppRoutes() {
       />
       <Route
         path="/"
+        element={<Navigate to="/monitoramento" replace />}
+      />
+      <Route
+        path="/monitoramento"
         element={
           <ProtectedRoute>
-            <DashboardPage />
+            <DashboardPage initialTab="monitoring" />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/analise-sla"
+        element={
+          <ProtectedRoute>
+            <DashboardPage initialTab="analysis" />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/relatorios"
+        element={
+          <ProtectedRoute>
+            <DashboardPage initialTab="reports" />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/alertas"
+        element={
+          <ProtectedRoute>
+            <DashboardPage initialTab="alerts" />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/configuracoes"
+        element={
+          <ProtectedRoute>
+            <DashboardPage initialTab="settings" />
           </ProtectedRoute>
         }
       />
@@ -74,6 +111,7 @@ function AppRoutes() {
           </ProtectedRoute>
         }
       />
+      <Route path="/acesso-negado" element={<AccessDenied />} />
       <Route path="*" element={<NotFound />} />
     </Routes>
   );

@@ -15,6 +15,7 @@ interface SLADonutChartProps {
   trend?: TrendDirection;
   variation?: number;
   onClick?: () => void;
+  onDoubleClick?: () => void;
   thresholdExcellent?: number;
   thresholdAttention?: number;
 }
@@ -32,6 +33,7 @@ export function SLADonutChart({
   trend = 'stable',
   variation,
   onClick,
+  onDoubleClick,
   thresholdExcellent = 98,
   thresholdAttention = 80,
 }: SLADonutChartProps) {
@@ -79,7 +81,8 @@ export function SLADonutChart({
       transition={{ delay, duration: 0.4, ease: 'easeOut' }}
       whileHover={{ scale: 1.02 }}
       onClick={onClick}
-      className={`glass rounded-xl p-5 transition-all hover:shadow-lg hover:shadow-primary/5 relative ${onClick ? 'cursor-pointer hover:bg-white/5' : ''}`}
+      onDoubleClick={onDoubleClick}
+      className={`glass rounded-xl p-5 transition-all hover:shadow-lg hover:shadow-primary/5 relative ${onClick || onDoubleClick ? 'cursor-pointer hover:bg-white/5' : ''}`}
     >
       {/* Header section with name and trend */}
       <div className="w-full flex items-start justify-between gap-3 mb-4">

@@ -118,35 +118,46 @@ export function useSLAAnalysis(type: 'fila' | 'projetos') {
                 topCriticalCount
             });
 
-            // --- DAILY RANGE AGGREGATION ---
-            const daySnapshots: Record<string, number[]> = {};
-            (rawHistory as any[] || []).forEach(h => {
-                const date = new Date(h.created_at);
-                const dateKey = format(date, 'yyyy-MM-dd');
-                const val = typeof h.percentual === 'string' ? parseFloat(h.percentual) : h.percentual;
-                if (!daySnapshots[dateKey]) daySnapshots[dateKey] = [];
-                daySnapshots[dateKey].push(val);
-            });
+            // --- DAILY RANGE AGGREGATION (CUMULATIVE MONTH-TO-DATE) ---
+            // Instead of RPC snapshots, we calculate cumulative SLA for each day of the month
+            const daysInMonth: Date[] = [];
+            let currentDay = startOfDay(new Date(startDateStr));
+            const today = startOfDay(new Date());
 
-            const historyPoints: HistoricalPoint[] = Object.entries(daySnapshots).map(([dateKey, values]) => {
-                const min = Math.min(...values);
-                const max = Math.max(...values);
-                const avg = values.reduce((a, b) => a + b, 0) / values.length;
-                const dayStart = startOfDay(new Date(dateKey + 'T00:00:00'));
-                const dayEnd = new Date(dateKey + 'T23:59:59');
+            while (currentDay <= today) {
+                daysInMonth.push(new Date(currentDay));
+                currentDay.setDate(currentDay.getDate() + 1);
+            }
+
+            const historyPoints: HistoricalPoint[] = daysInMonth.map(day => {
+                const dayEnd = new Date(day);
+                dayEnd.setHours(23, 59, 59, 999);
+
+                // Cumulative tickets: all tickets created on or before this day (within the month)
+                const cumulativeTickets = filteredDetailed.filter((d: any) => {
+                    const ticketDate = new Date(d.created_at);
+                    return ticketDate <= dayEnd;
+                });
+
+                const total = cumulativeTickets.length;
+                const lost = cumulativeTickets.filter((d: any) => d.sla_perdido === 'Sim').length;
+                const percent = total > 0 ? Number(((total - lost) / total * 100).toFixed(2)) : 100;
+
+                // Alerts for this specific day (for anomalies/markers)
                 const alertDay = (rawAlerts as any[] || []).filter(a => {
                     const ad = new Date(a.detected_at);
-                    return ad >= dayStart && ad <= dayEnd;
+                    return ad >= day && ad <= dayEnd;
                 });
+
                 return {
-                    timestamp: dayStart.toISOString(),
-                    min: parseFloat(min.toFixed(1)),
-                    max: parseFloat(max.toFixed(1)),
-                    avg: parseFloat(avg.toFixed(1)),
+                    timestamp: day.toISOString(),
+                    min: percent, // Showing single line, so min=max=avg
+                    max: percent,
+                    avg: percent,
                     hasAnomaly: alertDay.some(a => a.alert_type === 'anomalia'),
                     alerts: alertDay
                 };
-            }).sort((a, b) => new Date(a.timestamp).getTime() - new Date(b.timestamp).getTime());
+            });
 
             setHistory(historyPoints);
 
@@ -189,6 +200,30 @@ export function useSLAAnalysis(type: 'fila' | 'projetos') {
             });
 
             setDetailedData(filteredDetailed);
+
+            const filterData = (search: string, project?: string, fila?: string) => {
+                let result = [...filteredDetailed];
+
+                if (search) {
+                    const lowSearch = search.toLowerCase();
+                    result = result.filter(d =>
+                        (d.numero_referencia?.toLowerCase().includes(lowSearch)) ||
+                        (d.observacao_perda_sla?.toLowerCase().includes(lowSearch)) ||
+                        (d.nome_projeto?.toLowerCase().includes(lowSearch)) ||
+                        (d.fila?.toLowerCase().includes(lowSearch))
+                    );
+                }
+
+                if (project && project !== 'all') {
+                    result = result.filter(d => d.nome_projeto === project);
+                }
+
+                if (fila && fila !== 'all') {
+                    result = result.filter(d => d.fila === fila);
+                }
+
+                return result;
+            };
 
         } catch (err: any) {
             console.error('Error fetching SLA analysis:', err);

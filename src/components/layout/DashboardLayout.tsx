@@ -2,6 +2,7 @@ import { ReactNode } from 'react';
 import { motion } from 'framer-motion';
 import { LayoutDashboard, Settings, LogOut, User, BarChart2, Bell } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
+import { useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import {
   DropdownMenu,
@@ -20,7 +21,41 @@ interface DashboardLayoutProps {
 }
 
 export function DashboardLayout({ children, activeTab, onTabChange }: DashboardLayoutProps) {
-  const { user, logout, isAdmin } = useAuth();
+  const { user, logout, isAdmin, hasPermission } = useAuth();
+
+  // Permission Groups
+  const canViewMonitoring = hasPermission('VIEW_MPS') || hasPermission('VIEW_SLA_FILA') || hasPermission('VIEW_SLA_PROJETO');
+  const canViewAnalysis = hasPermission('VIEW_SLA_ANALYSIS') || hasPermission('EXPORT_SLA_ANALYSIS');
+  const canViewReports = hasPermission('VIEW_REPORTS') || hasPermission('EXPORT_REPORTS');
+  const canViewAlerts = hasPermission('CONFIG_ALERTS') || isAdmin; // Keeping admin fallback for now
+  const canViewSettings = hasPermission('CONFIG_ALERTS') ||
+    hasPermission('CONFIG_PRESENTATION') ||
+    hasPermission('CONFIG_SMTP') ||
+    hasPermission('CONFIG_METAS') ||
+    hasPermission('CONFIG_ROLES');
+
+  const navigate = useNavigate();
+
+  const handleTabChange = (tab: 'monitoring' | 'analysis' | 'reports' | 'alerts' | 'settings') => {
+    onTabChange(tab);
+    switch (tab) {
+      case 'monitoring':
+        navigate('/monitoramento');
+        break;
+      case 'analysis':
+        navigate('/analise-sla');
+        break;
+      case 'reports':
+        navigate('/relatorios');
+        break;
+      case 'alerts':
+        navigate('/alertas');
+        break;
+      case 'settings':
+        navigate('/configuracoes');
+        break;
+    }
+  };
 
   return (
     <div className="min-h-screen bg-background">
@@ -44,41 +79,47 @@ export function DashboardLayout({ children, activeTab, onTabChange }: DashboardL
 
             {/* Navigation */}
             <nav className="flex items-center gap-1">
-              <Button
-                variant={activeTab === 'monitoring' ? 'secondary' : 'ghost'}
-                size="sm"
-                onClick={() => onTabChange('monitoring')}
-                className="gap-2"
-              >
-                <LayoutDashboard className="h-4 w-4" />
-                <span className="hidden sm:inline">Monitoramento</span>
-              </Button>
+              {canViewMonitoring && (
+                <Button
+                  variant={activeTab === 'monitoring' ? 'secondary' : 'ghost'}
+                  size="sm"
+                  onClick={() => handleTabChange('monitoring')}
+                  className="gap-2"
+                >
+                  <LayoutDashboard className="h-4 w-4" />
+                  <span className="hidden sm:inline">Monitoramento</span>
+                </Button>
+              )}
 
-              <Button
-                variant={activeTab === 'analysis' ? 'secondary' : 'ghost'}
-                size="sm"
-                onClick={() => onTabChange('analysis')}
-                className="gap-2"
-              >
-                <BarChart2 className="h-4 w-4" />
-                <span className="hidden sm:inline">Análise de SLA</span>
-              </Button>
+              {canViewAnalysis && (
+                <Button
+                  variant={activeTab === 'analysis' ? 'secondary' : 'ghost'}
+                  size="sm"
+                  onClick={() => handleTabChange('analysis')}
+                  className="gap-2"
+                >
+                  <BarChart2 className="h-4 w-4" />
+                  <span className="hidden sm:inline">Análise de SLA</span>
+                </Button>
+              )}
 
-              <Button
-                variant={activeTab === 'reports' ? 'secondary' : 'ghost'}
-                size="sm"
-                onClick={() => onTabChange('reports')}
-                className="gap-2"
-              >
-                <BarChart2 className="h-4 w-4" />
-                <span className="hidden sm:inline">Relatórios</span>
-              </Button>
+              {canViewReports && (
+                <Button
+                  variant={activeTab === 'reports' ? 'secondary' : 'ghost'}
+                  size="sm"
+                  onClick={() => handleTabChange('reports')}
+                  className="gap-2"
+                >
+                  <BarChart2 className="h-4 w-4" />
+                  <span className="hidden sm:inline">Relatórios</span>
+                </Button>
+              )}
 
-              {(isAdmin || useAuth().hasPermission('alerts.view')) && (
+              {canViewAlerts && (
                 <Button
                   variant={activeTab === 'alerts' ? 'secondary' : 'ghost'}
                   size="sm"
-                  onClick={() => onTabChange('alerts')}
+                  onClick={() => handleTabChange('alerts')}
                   className="gap-2"
                 >
                   <Bell className="h-4 w-4" />
@@ -86,11 +127,11 @@ export function DashboardLayout({ children, activeTab, onTabChange }: DashboardL
                 </Button>
               )}
 
-              {isAdmin && (
+              {canViewSettings && (
                 <Button
                   variant={activeTab === 'settings' ? 'secondary' : 'ghost'}
                   size="sm"
-                  onClick={() => onTabChange('settings')}
+                  onClick={() => handleTabChange('settings')}
                   className="gap-2"
                 >
                   <Settings className="h-4 w-4" />

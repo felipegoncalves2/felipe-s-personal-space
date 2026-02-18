@@ -48,6 +48,8 @@ export interface MonitoringData {
     label: string;
   };
   variation?: number;
+  meta_excelente?: number;
+  meta_atencao?: number;
 }
 
 export interface SLAData {
@@ -60,6 +62,8 @@ export interface SLAData {
   created_at: string;
   trend?: TrendDirection;
   variation?: number;
+  meta_excelente?: number;
+  meta_atencao?: number;
 }
 
 export interface UserListItem {

@@ -8,7 +8,20 @@ import {
     TableRow,
 } from '@/components/ui/table';
 import { format } from 'date-fns';
-import { Download, Search, Filter, ArrowUpDown } from 'lucide-react';
+import { Download, Search, Filter, ArrowUpDown, Check, ChevronsUpDown } from 'lucide-react';
+import { cn } from "@/lib/utils";
+import {
+    Command,
+    CommandEmpty,
+    CommandGroup,
+    CommandInput,
+    CommandItem,
+} from "@/components/ui/command";
+import {
+    Popover,
+    PopoverContent,
+    PopoverTrigger,
+} from "@/components/ui/popover";
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import {
@@ -24,6 +37,85 @@ import {
     TooltipProvider,
     TooltipTrigger,
 } from "@/components/ui/tooltip";
+
+function SearchableSelect({
+    options,
+    value,
+    onValueChange,
+    placeholder,
+    emptyText,
+    className
+}: {
+    options: string[];
+    value: string;
+    onValueChange: (val: string) => void;
+    placeholder: string;
+    emptyText: string;
+    className?: string;
+}) {
+    const [open, setOpen] = useState(false);
+
+    return (
+        <Popover open={open} onOpenChange={setOpen}>
+            <PopoverTrigger asChild>
+                <Button
+                    variant="outline"
+                    role="combobox"
+                    aria-expanded={open}
+                    className={cn("w-full justify-between bg-secondary/30 border-white/5 h-10 px-3 font-normal", className)}
+                >
+                    <span className="truncate">
+                        {value === "all" ? placeholder : value}
+                    </span>
+                    <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+                </Button>
+            </PopoverTrigger>
+            <PopoverContent className="w-[200px] p-0 bg-slate-900 border-white/10">
+                <Command className="bg-transparent">
+                    <CommandInput placeholder={`Buscar ${placeholder.toLowerCase()}...`} />
+                    <CommandEmpty>{emptyText}</CommandEmpty>
+                    <CommandGroup className="max-h-60 overflow-auto">
+                        <CommandItem
+                            value="all"
+                            onSelect={() => {
+                                onValueChange("all");
+                                setOpen(false);
+                            }}
+                            className="cursor-pointer"
+                        >
+                            <Check
+                                className={cn(
+                                    "mr-2 h-4 w-4",
+                                    value === "all" ? "opacity-100" : "opacity-0"
+                                )}
+                            />
+                            Todos
+                        </CommandItem>
+                        {options.map((option) => (
+                            <CommandItem
+                                key={option}
+                                value={option}
+                                onSelect={(currentValue) => {
+                                    onValueChange(currentValue === value ? "all" : currentValue);
+                                    setOpen(false);
+                                }}
+                                className="cursor-pointer"
+                            >
+                                <Check
+                                    className={cn(
+                                        "mr-2 h-4 w-4",
+                                        value === option ? "opacity-100" : "opacity-0"
+                                    )}
+                                />
+                                {option}
+                            </CommandItem>
+                        ))}
+                    </CommandGroup>
+                </Command>
+            </PopoverContent>
+        </Popover>
+    );
+}
 
 interface DetailedSLATableProps {
     data: any[];
@@ -171,25 +263,23 @@ export function DetailedSLATable({ data }: DetailedSLATableProps) {
                         </SelectContent>
                     </Select>
 
-                    <Select value={filterFila} onValueChange={setFilterFila}>
-                        <SelectTrigger className="w-[160px] bg-secondary/30 border-white/5">
-                            <SelectValue placeholder="Fila" />
-                        </SelectTrigger>
-                        <SelectContent>
-                            <SelectItem value="all">Todas as Filas</SelectItem>
-                            {filas.map(f => <SelectItem key={f} value={f}>{f}</SelectItem>)}
-                        </SelectContent>
-                    </Select>
+                    <SearchableSelect
+                        options={filas}
+                        value={filterFila}
+                        onValueChange={setFilterFila}
+                        placeholder="Filas"
+                        emptyText="Nenhuma fila encontrada."
+                        className="w-[180px]"
+                    />
 
-                    <Select value={filterProjeto} onValueChange={setFilterProjeto}>
-                        <SelectTrigger className="w-[160px] bg-secondary/30 border-white/5">
-                            <SelectValue placeholder="Projeto" />
-                        </SelectTrigger>
-                        <SelectContent>
-                            <SelectItem value="all">Todos Projetos</SelectItem>
-                            {projetos.map(p => <SelectItem key={p} value={p}>{p}</SelectItem>)}
-                        </SelectContent>
-                    </Select>
+                    <SearchableSelect
+                        options={projetos}
+                        value={filterProjeto}
+                        onValueChange={setFilterProjeto}
+                        placeholder="Projetos"
+                        emptyText="Nenhum projeto encontrado."
+                        className="w-[180px]"
+                    />
 
                     <Button variant="outline" size="sm" onClick={exportToCSV} className="gap-2 glass hover:bg-white/10 transition-all ml-auto">
                         <Download className="h-4 w-4" />
@@ -222,7 +312,7 @@ export function DetailedSLATable({ data }: DetailedSLATableProps) {
                                 <TableHead className="w-[120px] text-[10px] uppercase tracking-wider">Ref / UF</TableHead>
                                 <TableHead className="text-[10px] uppercase tracking-wider">Projeto / Fila</TableHead>
                                 <TableHead className="text-[10px] uppercase tracking-wider">Status SLA</TableHead>
-                                <TableHead className="text-[10px] uppercase tracking-wider">Observação</TableHead>
+                                {filterSLAPerdido !== 'Não' && <TableHead className="text-[10px] uppercase tracking-wider">Observação</TableHead>}
                                 <TableHead className="text-[10px] uppercase tracking-wider">Motivo / Cat.</TableHead>
                                 <TableHead className="text-right text-[10px] uppercase tracking-wider">Abertura / Pausas</TableHead>
                             </TableRow>
@@ -267,24 +357,26 @@ export function DetailedSLATable({ data }: DetailedSLATableProps) {
                                                 {row.sla_perdido === 'Sim' ? 'PERDIDO' : 'DENTRO'}
                                             </span>
                                         </TableCell>
-                                        <TableCell className="max-w-[200px]">
-                                            {row.sla_perdido === 'Sim' ? (
-                                                <TooltipProvider>
-                                                    <Tooltip>
-                                                        <TooltipTrigger asChild>
-                                                            <p className="text-[10px] text-muted-foreground truncate hover:text-foreground transition-colors cursor-help max-w-[200px]">
-                                                                {row.observacao_perda_sla || 'Sem observação'}
-                                                            </p>
-                                                        </TooltipTrigger>
-                                                        <TooltipContent side="top" className="max-w-[350px] bg-slate-900 border-white/10 text-xs p-3">
-                                                            <p className="leading-relaxed">{row.observacao_perda_sla || 'Nenhuma observação registrada para este chamado.'}</p>
-                                                        </TooltipContent>
-                                                    </Tooltip>
-                                                </TooltipProvider>
-                                            ) : (
-                                                <span className="text-[10px] text-muted-foreground/50">—</span>
-                                            )}
-                                        </TableCell>
+                                        {filterSLAPerdido !== 'Não' && (
+                                            <TableCell className="max-w-[200px]">
+                                                {row.sla_perdido === 'Sim' ? (
+                                                    <TooltipProvider>
+                                                        <Tooltip>
+                                                            <TooltipTrigger asChild>
+                                                                <p className="text-[10px] text-muted-foreground truncate hover:text-foreground transition-colors cursor-help max-w-[200px]">
+                                                                    {row.observacao_perda_sla || 'Sem observação'}
+                                                                </p>
+                                                            </TooltipTrigger>
+                                                            <TooltipContent side="top" className="max-w-[350px] bg-slate-900 border-white/10 text-xs p-3">
+                                                                <p className="leading-relaxed">{row.observacao_perda_sla || 'Nenhuma observação registrada para este chamado.'}</p>
+                                                            </TooltipContent>
+                                                        </Tooltip>
+                                                    </TooltipProvider>
+                                                ) : (
+                                                    <span className="text-[10px] text-muted-foreground/50">—</span>
+                                                )}
+                                            </TableCell>
+                                        )}
                                         <TableCell>
                                             <div className="flex flex-col">
                                                 <span className="text-[9px] font-medium text-foreground truncate max-w-[150px]">

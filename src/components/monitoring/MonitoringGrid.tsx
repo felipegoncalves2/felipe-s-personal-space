@@ -48,6 +48,8 @@ export function MonitoringGrid() {
       const thresholdExcellent = settings.threshold_excellent ?? 98;
       const thresholdAttention = settings.threshold_attention ?? 80;
       result = result.filter((item) => {
+        const thresholdExcellent = item.meta_excelente ?? settings.threshold_excellent ?? 98;
+        const thresholdAttention = item.meta_atencao ?? settings.threshold_attention ?? 80;
         if (statusFilter === 'green') return item.percentual >= thresholdExcellent;
         if (statusFilter === 'yellow') return item.percentual >= thresholdAttention && item.percentual < thresholdExcellent;
         if (statusFilter === 'red') return item.percentual < thresholdAttention;
@@ -85,9 +87,9 @@ export function MonitoringGrid() {
     const averagePercentual = totalMaquinas > 0 ? (totalMonitoradas / totalMaquinas) * 100 : 0;
 
     return {
-      green: data.filter((d) => d.percentual >= thresholdExcellent).length,
-      yellow: data.filter((d) => d.percentual >= thresholdAttention && d.percentual < thresholdExcellent).length,
-      red: data.filter((d) => d.percentual < thresholdAttention).length,
+      green: data.filter((d) => d.percentual >= (d.meta_excelente ?? settings.threshold_excellent ?? 98)).length,
+      yellow: data.filter((d) => d.percentual >= (d.meta_atencao ?? settings.threshold_attention ?? 80) && d.percentual < (d.meta_excelente ?? settings.threshold_excellent ?? 98)).length,
+      red: data.filter((d) => d.percentual < (d.meta_atencao ?? settings.threshold_attention ?? 80)).length,
       average: averagePercentual,
       totalMaquinas,
       totalMonitoradas,
@@ -303,8 +305,8 @@ export function MonitoringGrid() {
               variation={item.variation}
               anomaly={item.anomaly}
               comparison={item.comparison}
-              thresholdExcellent={settings.threshold_excellent ?? 98}
-              thresholdAttention={settings.threshold_attention ?? 80}
+              thresholdExcellent={item.meta_excelente ?? settings.threshold_excellent ?? 98}
+              thresholdAttention={item.meta_atencao ?? settings.threshold_attention ?? 80}
               onClick={() => setSelectedItem({ empresa: item.empresa })}
             />
           ))}

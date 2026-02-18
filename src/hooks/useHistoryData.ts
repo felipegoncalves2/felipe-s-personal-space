@@ -8,6 +8,8 @@ export interface HistoryDataPoint {
     date: string; // DD/MM or DD/MM HHh
     fullDate: string; // YYYY-MM-DD or ISO
     percentual: number;
+    total_base?: number;
+    total_sem_monitoramento?: number;
 }
 
 interface UseHistoryDataProps {
@@ -74,32 +76,36 @@ async function fetchMPSHistory(identifier: string, granularity: Granularity): Pr
     if (error) throw error;
     if (!data || data.length === 0) return [];
 
-    const processedData: HistoryDataPoint[] = data.map((item) => {
+    // Aggregate by period
+    const aggregated = new Map<string, { total_base: number, total_sem_monitoramento: number, date: string, fullDate: string }>();
+
+    data.forEach(item => {
         const dateObj = new Date(item.data_gravacao);
-        const totalBase = parseInt(item.total_base as string) || 0;
-        const semMonitoramento = parseInt(item.total_sem_monitoramento as string) || 0;
-        const monitored = Math.max(0, totalBase - semMonitoramento);
-        const percentual = totalBase > 0 ? (monitored / totalBase) * 100 : 100;
-
-        const displayDate = granularity === 'daily'
-            ? format(dateObj, 'dd/MM')
-            : format(dateObj, 'dd/MM HH') + 'h';
-
-        return {
-            date: displayDate,
-            fullDate: item.data_gravacao,
-            percentual: parseFloat(percentual.toFixed(2))
-        };
-    });
-
-    // Deduplicate by period
-    const map = new Map<string, HistoryDataPoint>();
-    processedData.forEach(p => {
         const key = granularity === 'daily'
-            ? p.fullDate.split('T')[0]
-            : format(new Date(p.fullDate), 'yyyy-MM-dd HH');
-        map.set(key, p);
+            ? format(dateObj, 'yyyy-MM-dd')
+            : format(dateObj, 'yyyy-MM-dd HH');
+
+        const current = aggregated.get(key) || {
+            total_base: 0,
+            total_sem_monitoramento: 0,
+            date: granularity === 'daily' ? format(dateObj, 'dd/MM') : format(dateObj, 'dd/MM HH') + 'h',
+            fullDate: item.data_gravacao
+        };
+
+        current.total_base += (parseInt(item.total_base as string) || 0);
+        current.total_sem_monitoramento += (parseInt(item.total_sem_monitoramento as string) || 0);
+        aggregated.set(key, current);
     });
 
-    return Array.from(map.values());
+    const result = Array.from(aggregated.values()).map(item => ({
+        date: item.date,
+        fullDate: item.fullDate,
+        total_base: item.total_base,
+        total_sem_monitoramento: item.total_sem_monitoramento,
+        percentual: item.total_base > 0
+            ? parseFloat((((item.total_base - item.total_sem_monitoramento) / item.total_base) * 100).toFixed(2))
+            : 100
+    }));
+
+    return result;
 }

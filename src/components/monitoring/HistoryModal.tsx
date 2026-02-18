@@ -5,16 +5,18 @@ import {
     DialogTitle,
     DialogFooter,
 } from "@/components/ui/dialog";
-import { useHistoryData, HistoryType, Granularity } from "@/hooks/useHistoryData";
+import { useHistoryData, HistoryType, Granularity, HistoryDataPoint } from "@/hooks/useHistoryData";
 import { useComments } from "@/hooks/useComments";
 import { Area, AreaChart, CartesianGrid, ResponsiveContainer, Tooltip, XAxis, YAxis, DotProps } from "recharts";
-import { Loader2, TrendingUp, TrendingDown, MessageSquare, AlertCircle, Calendar, Clock } from "lucide-react";
+import { Loader2, TrendingUp, TrendingDown, MessageSquare, AlertCircle, Calendar, Clock, History, MessageSquarePlus, Trash2 } from "lucide-react";
 import { useMemo, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Checkbox } from "@/components/ui/checkbox";
 import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
+import { supabase } from "@/integrations/supabase/client";
+import { useEffect } from "react";
 
 interface HistoryModalProps {
     isOpen: boolean;
@@ -33,21 +35,58 @@ export function HistoryModal({ isOpen, onClose, type, identifier, title }: Histo
     const [commentText, setCommentText] = useState("");
     const [isIncident, setIsIncident] = useState(false);
     const [isCommentDialogOpen, setIsCommentDialogOpen] = useState(false);
+    const [customMeta, setCustomMeta] = useState<any>(null);
+
+    // Fetch custom metas for the identifier
+    useEffect(() => {
+        if (isOpen && type === 'mps') {
+            const fetchMeta = async () => {
+                const { data } = await supabase
+                    .from('sla_metas' as any)
+                    .select('*')
+                    .eq('tipo', 'mps')
+                    .eq('identificador', identifier)
+                    .maybeSingle();
+                if (data) setCustomMeta(data);
+            };
+            fetchMeta();
+        }
+    }, [isOpen, identifier, type]);
 
     // Calculate Min/Max for highlights
-    const { minPoint, maxPoint } = useMemo(() => {
-        if (!data || data.length === 0) return { minPoint: null, maxPoint: null };
+    const { minPoint, maxPoint, latestStats } = useMemo(() => {
+        const historyData = data as HistoryDataPoint[];
+        if (!historyData || historyData.length === 0) return { minPoint: null, maxPoint: null, latestStats: null };
 
-        let min = data[0];
-        let max = data[0];
+        let min = historyData[0];
+        let max = historyData[0];
 
-        data.forEach(point => {
+        historyData.forEach(point => {
             if (point.percentual < min.percentual) min = point;
             if (point.percentual > max.percentual) max = point;
         });
 
-        return { minPoint: min, maxPoint: max };
+        // Get latest point for indicators
+        const latest = historyData[historyData.length - 1];
+        const stats = latest ? {
+            totalBase: latest.total_base || 0,
+            totalSem: latest.total_sem_monitoramento || 0,
+            totalMonitoradas: (latest.total_base || 0) - (latest.total_sem_monitoramento || 0),
+            percentual: latest.percentual,
+        } : null;
+
+        return { minPoint: min, maxPoint: max, latestStats: stats };
     }, [data]);
+
+    const classification = useMemo(() => {
+        if (!latestStats) return null;
+        const metaExcelente = customMeta?.meta_excelente ?? 98;
+        const metaAtencao = customMeta?.meta_atencao ?? 80;
+
+        if (latestStats.percentual >= metaExcelente) return { label: 'Excelente', color: 'text-chart-green' };
+        if (latestStats.percentual >= metaAtencao) return { label: 'Atenção', color: 'text-chart-yellow' };
+        return { label: 'Crítico', color: 'text-chart-red' };
+    }, [latestStats, customMeta]);
 
     const handlePointClick = (data: any) => {
         if (data && data.activePayload && data.activePayload.length > 0) {
@@ -221,6 +260,32 @@ export function HistoryModal({ isOpen, onClose, type, identifier, title }: Histo
                         </ToggleGroup>
                     </DialogHeader>
 
+                    {/* Indicators Section */}
+                    {latestStats && (
+                        <div className="grid grid-cols-2 md:grid-cols-5 gap-3 mt-4">
+                            <div className="glass p-3 rounded-lg text-center">
+                                <p className="text-[10px] text-muted-foreground uppercase">Máquinas</p>
+                                <p className="text-sm font-bold">{latestStats.totalBase.toLocaleString()}</p>
+                            </div>
+                            <div className="glass p-3 rounded-lg text-center">
+                                <p className="text-[10px] text-muted-foreground uppercase">Monitoradas</p>
+                                <p className="text-sm font-bold text-chart-green">{latestStats.totalMonitoradas.toLocaleString()}</p>
+                            </div>
+                            <div className="glass p-3 rounded-lg text-center">
+                                <p className="text-[10px] text-muted-foreground uppercase">Sem Comunc.</p>
+                                <p className="text-sm font-bold text-chart-red">{latestStats.totalSem.toLocaleString()}</p>
+                            </div>
+                            <div className="glass p-3 rounded-lg text-center">
+                                <p className="text-[10px] text-muted-foreground uppercase">Percentual</p>
+                                <p className="text-sm font-bold text-primary">{latestStats.percentual}%</p>
+                            </div>
+                            <div className="glass p-3 rounded-lg text-center">
+                                <p className="text-[10px] text-muted-foreground uppercase">Status</p>
+                                <p className={`text-sm font-bold ${classification?.color}`}>{classification?.label}</p>
+                            </div>
+                        </div>
+                    )}
+
                     <div className="mt-6 h-[400px] w-full flex items-center justify-center bg-black/20 rounded-lg p-4">
                         {isLoading ? (
                             <Loader2 className="h-8 w-8 animate-spin text-primary" />
@@ -295,6 +360,9 @@ export function HistoryModal({ isOpen, onClose, type, identifier, title }: Histo
                                 )}
                             </div>
                         )}
+                        <Button variant="default" className="bg-primary hover:bg-primary/90 ml-auto gap-2">
+                            Abrir Chamado
+                        </Button>
                     </div>
                 </DialogContent>
             </Dialog>

@@ -66,7 +66,19 @@ export function useMonitoringData() {
 
       if (alertsError) console.error('Error fetching active alerts:', alertsError);
 
-      // Group history by empresa
+      // 3.5 Fetch custom metas
+      const { data: customMetas, error: metasError } = await supabase
+        .from('sla_metas' as any)
+        .select('*')
+        .eq('tipo', 'mps');
+
+      if (metasError) console.error('Error fetching custom metas:', metasError);
+
+      // Group metas by identifier
+      const metasByIdentifier = new Map<string, any>();
+      for (const meta of (customMetas as any[]) || []) {
+        metasByIdentifier.set(meta.identificador, meta);
+      }
       const recordsByEmpresa = new Map<string, Array<any>>();
       for (const record of rawHistory || []) {
         if (!recordsByEmpresa.has(record.empresa)) {
@@ -134,14 +146,19 @@ export function useMonitoringData() {
           });
         }
 
-        if (currentPercentual < 80) {
+        // Get custom metas or fallback
+        const meta = metasByIdentifier.get(item.empresa);
+        const metaExcelente = meta?.meta_excelente ?? 98;
+        const metaAtencao = meta?.meta_atencao ?? 80;
+
+        if (currentPercentual < metaAtencao) {
           persistAlert({
             tipo_monitoramento: 'mps',
             identificador_item: item.empresa,
             alert_type: 'limite',
             severity: 'critical',
             percentual_atual: Number(currentPercentual.toFixed(2)),
-            contexto: { reason: 'Percentual abaixo do limite de 80%' }
+            contexto: { reason: `Percentual abaixo da meta de atenção de ${metaAtencao}%` }
           });
         }
 
@@ -154,7 +171,9 @@ export function useMonitoringData() {
           trend: itemAlerts.some(a => a.alert_type === 'tendencia') ? 'down' : (variation > 0 ? 'up' : 'stable'),
           anomaly: itemAlerts.some(a => a.alert_type === 'anomalia'),
           comparison,
-          variation
+          variation,
+          meta_excelente: metaExcelente,
+          meta_atencao: metaAtencao
         };
       });
 

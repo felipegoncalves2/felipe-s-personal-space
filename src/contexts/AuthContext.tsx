@@ -1,5 +1,6 @@
 import React, { createContext, useContext, useState, useEffect, useCallback } from 'react';
 import { User, AuthState, LoginResponse, ValidateSessionResponse } from '@/types';
+import { supabase } from '@/integrations/supabase/client';
 
 const SUPABASE_URL = 'https://qromvrzqktrfexbnaoem.supabase.co';
 const SESSION_KEY = 'techub_session';
@@ -12,6 +13,25 @@ interface AuthContextType extends AuthState {
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
+
+const fetchPermissions = async (roleName: string) => {
+  if (roleName === 'ADM') return []; // Admin has all permissions implicitly
+
+  try {
+    const { data: roleData } = await supabase
+      .from('roles')
+      .select('id, role_permissions(permission_key)')
+      .eq('name', roleName)
+      .single();
+
+    if (roleData?.role_permissions) {
+      return (roleData.role_permissions as any[]).map((p: any) => p.permission_key);
+    }
+  } catch (error) {
+    console.error('Error fetching permissions:', error);
+  }
+  return [];
+};
 
 export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [authState, setAuthState] = useState<AuthState>({
@@ -33,8 +53,11 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       const data: ValidateSessionResponse = await response.json();
 
       if (data.valid && data.user) {
+        const permissions = await fetchPermissions(data.user.role);
+        const userWithPermissions = { ...data.user, permissions };
+
         setAuthState({
-          user: data.user,
+          user: userWithPermissions,
           session_token: token,
           expires_at: data.expires_at || null,
           isAuthenticated: true,
@@ -110,13 +133,16 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       const data: LoginResponse = await response.json();
 
       if (data.success && data.user) {
+        const permissions = await fetchPermissions(data.user.role);
+        const userWithPermissions = { ...data.user, permissions };
+
         localStorage.setItem(SESSION_KEY, JSON.stringify({
           session_token: data.session_token,
           expires_at: data.expires_at,
         }));
 
         setAuthState({
-          user: data.user,
+          user: userWithPermissions,
           session_token: data.session_token,
           expires_at: data.expires_at,
           isAuthenticated: true,
