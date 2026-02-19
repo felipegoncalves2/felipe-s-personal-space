@@ -111,6 +111,14 @@ function AppRoutes() {
           </ProtectedRoute>
         }
       />
+      <Route
+        path="/backlog"
+        element={
+          <ProtectedRoute>
+            <DashboardPage initialTab="backlog" />
+          </ProtectedRoute>
+        }
+      />
       <Route path="/acesso-negado" element={<AccessDenied />} />
       <Route path="*" element={<NotFound />} />
     </Routes>

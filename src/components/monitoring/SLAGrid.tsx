@@ -1,7 +1,7 @@
 import { useState, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
-import { Search, RefreshCw, Filter, Loader2, Play } from 'lucide-react';
+import { Search, RefreshCw, Filter, Loader2, Play, ArrowUpDown } from 'lucide-react';
 import { SLADonutChart } from './SLADonutChart';
 import { HistoryModal } from './HistoryModal';
 import { useSLAData } from '@/hooks/useSLAData';
@@ -31,6 +31,7 @@ export function SLAGrid({ type }: SLAGridProps) {
   const { settings } = usePresentationSettings(type === 'fila' ? 'sla_fila' : 'sla_projetos');
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState<StatusFilter>('all');
+  const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('desc');
   const [itemsPerPage, setItemsPerPage] = useState(10);
   const [currentPage, setCurrentPage] = useState(1);
   const [selectedItem, setSelectedItem] = useState<{ nome: string } | null>(null);
@@ -60,11 +61,15 @@ export function SLAGrid({ type }: SLAGridProps) {
       });
     }
 
-    // Sort alphabetically by name
-    result.sort((a, b) => a.nome.localeCompare(b.nome, 'pt-BR'));
+    // Sort by percentage or alphabetically
+    if (sortOrder === 'desc') {
+      result.sort((a, b) => b.percentual - a.percentual);
+    } else if (sortOrder === 'asc') {
+      result.sort((a, b) => a.percentual - b.percentual);
+    }
 
     return result;
-  }, [data, searchTerm, statusFilter]);
+  }, [data, searchTerm, statusFilter, sortOrder]);
 
   const paginatedData = useMemo(() => {
     const start = (currentPage - 1) * itemsPerPage;
@@ -223,10 +228,21 @@ export function SLAGrid({ type }: SLAGridProps) {
             </SelectContent>
           </Select>
 
+          {/* Sort */}
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => {
+              setSortOrder(sortOrder === 'asc' ? 'desc' : 'asc');
+              setCurrentPage(1);
+            }}
+            className="bg-secondary/50"
+          >
+            <ArrowUpDown className="mr-2 h-4 w-4" />
+            {sortOrder === 'desc' ? 'Maior %' : 'Menor %'}
+          </Button>
 
 
-
-          {/* Items per page */}
           <Select
             value={itemsPerPage.toString()}
             onValueChange={(value) => {

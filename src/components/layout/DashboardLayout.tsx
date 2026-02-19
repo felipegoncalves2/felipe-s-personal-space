@@ -1,6 +1,6 @@
 import { ReactNode } from 'react';
 import { motion } from 'framer-motion';
-import { LayoutDashboard, Settings, LogOut, User, BarChart2, Bell } from 'lucide-react';
+import { LayoutDashboard, Settings, LogOut, User, BarChart2, Bell, Package } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
 import { useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
@@ -16,8 +16,8 @@ import techubLogo from '@/assets/logo_techub.jpg';
 
 interface DashboardLayoutProps {
   children: ReactNode;
-  activeTab: 'monitoring' | 'analysis' | 'reports' | 'alerts' | 'settings';
-  onTabChange: (tab: 'monitoring' | 'analysis' | 'reports' | 'alerts' | 'settings') => void;
+  activeTab: 'monitoring' | 'analysis' | 'reports' | 'alerts' | 'settings' | 'backlog';
+  onTabChange: (tab: 'monitoring' | 'analysis' | 'reports' | 'alerts' | 'settings' | 'backlog') => void;
 }
 
 export function DashboardLayout({ children, activeTab, onTabChange }: DashboardLayoutProps) {
@@ -36,7 +36,7 @@ export function DashboardLayout({ children, activeTab, onTabChange }: DashboardL
 
   const navigate = useNavigate();
 
-  const handleTabChange = (tab: 'monitoring' | 'analysis' | 'reports' | 'alerts' | 'settings') => {
+  const handleTabChange = (tab: 'monitoring' | 'analysis' | 'reports' | 'alerts' | 'settings' | 'backlog') => {
     onTabChange(tab);
     switch (tab) {
       case 'monitoring':
@@ -53,6 +53,9 @@ export function DashboardLayout({ children, activeTab, onTabChange }: DashboardL
         break;
       case 'settings':
         navigate('/configuracoes');
+        break;
+      case 'backlog':
+        navigate('/backlog');
         break;
     }
   };
@@ -90,6 +93,16 @@ export function DashboardLayout({ children, activeTab, onTabChange }: DashboardL
                   <span className="hidden sm:inline">Monitoramento</span>
                 </Button>
               )}
+
+              <Button
+                variant={activeTab === 'backlog' ? 'secondary' : 'ghost'}
+                size="sm"
+                onClick={() => handleTabChange('backlog')}
+                className="gap-2"
+              >
+                <Package className="h-4 w-4" />
+                <span className="hidden sm:inline">Backlog</span>
+              </Button>
 
               {canViewAnalysis && (
                 <Button

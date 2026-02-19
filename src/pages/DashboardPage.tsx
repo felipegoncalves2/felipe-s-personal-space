@@ -14,11 +14,19 @@ import { MonitoringTabType } from '@/types';
 import { ReportsPage } from './ReportsPage';
 import { AlertsManagement } from '@/components/alerts/AlertsManagement';
 import { SLAAnalysis } from '@/components/sla-analysis/SLAAnalysis';
+import { BacklogPage } from './BacklogPage';
 
-export default function DashboardPage() {
+type DashboardTab = 'monitoring' | 'analysis' | 'reports' | 'alerts' | 'settings' | 'backlog';
+
+interface DashboardPageProps {
+  initialTab?: DashboardTab;
+}
+
+export default function DashboardPage({ initialTab = 'monitoring' }: DashboardPageProps) {
   const { isAdmin, hasPermission } = useAuth();
-  const [activeTab, setActiveTab] = useState<'monitoring' | 'analysis' | 'reports' | 'alerts' | 'settings'>('monitoring');
+  const [activeTab, setActiveTab] = useState<DashboardTab>(initialTab);
   const [monitoringTab, setMonitoringTab] = useState<MonitoringTabType>('mps');
+
 
   return (
     <DashboardLayout activeTab={activeTab} onTabChange={setActiveTab}>
@@ -70,6 +78,10 @@ export default function DashboardPage() {
 
       {activeTab === 'alerts' && hasPermission('alerts.view') && (
         <AlertsManagement />
+      )}
+
+      {activeTab === 'backlog' && (
+        <BacklogPage />
       )}
 
       {activeTab === 'settings' && (isAdmin || hasPermission('roles.view') || hasPermission('users.view')) && (

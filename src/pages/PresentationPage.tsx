@@ -8,6 +8,7 @@ import { StorytellingView } from '@/components/monitoring/StorytellingView';
 import { useMonitoringData } from '@/hooks/useMonitoringData';
 import { useSLAData } from '@/hooks/useSLAData';
 import { usePresentationSettings } from '@/hooks/usePresentationSettings';
+import { usePresentationCursor } from '@/hooks/usePresentationCursor';
 import { useAdaptiveLayout, useViewportSize } from '@/hooks/useAdaptiveLayout';
 import { MonitoringData, SLAData, MonitoringTabType, tabToMonitoringType } from '@/types';
 import logoTechub from '@/assets/logo_techub.jpg';
@@ -50,8 +51,10 @@ export default function PresentationPage() {
   const [currentPageIndex, setCurrentPageIndex] = useState(0);
   const [showControls, setShowControls] = useState(false);
   const [isFullscreen, setIsFullscreen] = useState(false);
-  const hideTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const containerRef = useRef<HTMLDivElement>(null);
+
+  // Hide cursor after 5 seconds of inactivity in presentation mode
+  usePresentationCursor(true);
 
   // Get current data based on active tab
   const { rawData, isLoading, title, itemLabel } = useMemo(() => {
@@ -237,17 +240,11 @@ export default function PresentationPage() {
     };
   }, [enterFullscreen]);
 
-  // Show/hide controls on mouse movement
+  // Show/hide controls on mouse movement (controls overlay, separate from cursor)
   const handleMouseMove = useCallback(() => {
     setShowControls(true);
-
-    if (hideTimeoutRef.current) {
-      clearTimeout(hideTimeoutRef.current);
-    }
-
-    hideTimeoutRef.current = setTimeout(() => {
-      setShowControls(false);
-    }, 3000);
+    const timer = setTimeout(() => setShowControls(false), 3000);
+    return () => clearTimeout(timer);
   }, []);
 
   // Handle exit
@@ -427,8 +424,8 @@ export default function PresentationPage() {
                       scale={layout.scale}
                       trend={item.trend}
                       variation={item.variation}
-                      thresholdExcellent={settings.threshold_excellent ?? 98}
-                      thresholdAttention={settings.threshold_attention ?? 80}
+                      thresholdExcellent={item.meta_excelente ?? settings.threshold_excellent ?? 98}
+                      thresholdAttention={item.meta_atencao ?? settings.threshold_attention ?? 80}
                     />
                   </motion.div>
                 );
