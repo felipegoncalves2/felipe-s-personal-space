@@ -31,7 +31,7 @@ export interface BacklogIntradiarioRecord {
 export interface BacklogFilters {
     dateFrom: string;
     dateTo: string;
-    codigoProjeto: string[];
+    nomeProjeto: string[];
     empresaNome: string[];
     fila: string[];
     estado: string[];
@@ -45,7 +45,7 @@ export interface BacklogFilters {
 export const DEFAULT_FILTERS: BacklogFilters = {
     dateFrom: '',
     dateTo: '',
-    codigoProjeto: [],
+    nomeProjeto: [],
     empresaNome: [],
     fila: [],
     estado: [],
@@ -229,8 +229,8 @@ export function useBacklogData() {
         if (filters.dateTo) {
             result = result.filter(d => d.data_criacao && d.data_criacao <= filters.dateTo + 'T23:59:59');
         }
-        if (filters.codigoProjeto.length > 0) {
-            result = result.filter(d => d.codigo_projeto && filters.codigoProjeto.includes(d.codigo_projeto));
+        if (filters.nomeProjeto.length > 0) {
+            result = result.filter(d => d.nome_projeto && filters.nomeProjeto.includes(d.nome_projeto));
         }
         if (filters.empresaNome.length > 0) {
             result = result.filter(d => d.empresa_nome && filters.empresaNome.includes(d.empresa_nome));
@@ -265,7 +265,7 @@ export function useBacklogData() {
         const unique = (field: keyof BacklogItem) =>
             [...new Set(rawData.map(d => d[field]).filter(Boolean) as string[])].sort();
         return {
-            codigoProjeto: unique('codigo_projeto'),
+            nomeProjeto: unique('nome_projeto'),
             empresaNome: unique('empresa_nome'),
             fila: unique('fila'),
             estado: unique('estado'),

@@ -3,13 +3,13 @@ import { BacklogFilters, DEFAULT_FILTERS, FAIXAS_DIAS } from '@/hooks/useBacklog
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { ChevronDown, ChevronUp, X, Filter } from 'lucide-react';
+import { ChevronDown, ChevronUp, X, Filter, Search } from 'lucide-react';
 
 interface BacklogFiltersProps {
     filters: BacklogFilters;
     setFilters: (f: BacklogFilters) => void;
     options: {
-        codigoProjeto: string[];
+        nomeProjeto: string[];
         empresaNome: string[];
         fila: string[];
         estado: string[];
@@ -25,12 +25,22 @@ function MultiSelect({
     options,
     value,
     onChange,
+    searchable = false,
+    showSelectAll = false,
 }: {
     label: string;
     options: string[];
     value: string[];
     onChange: (v: string[]) => void;
+    searchable?: boolean;
+    showSelectAll?: boolean;
 }) {
+    const [searchTerm, setSearchTerm] = useState('');
+
+    const filteredOptions = options.filter(opt =>
+        opt.toLowerCase().includes(searchTerm.toLowerCase())
+    );
+
     const toggle = (opt: string) => {
         if (value.includes(opt)) {
             onChange(value.filter(v => v !== opt));
@@ -39,30 +49,66 @@ function MultiSelect({
         }
     };
 
+    const toggleAll = () => {
+        const allFilteredSelected = filteredOptions.every(opt => value.includes(opt));
+        if (allFilteredSelected) {
+            // Unselect only the filtered ones
+            onChange(value.filter(v => !filteredOptions.includes(v)));
+        } else {
+            // Select all filtered ones (union)
+            const newValue = Array.from(new Set([...value, ...filteredOptions]));
+            onChange(newValue);
+        }
+    };
+
     return (
-        <div className="space-y-1">
+        <div className="space-y-2">
             <Label className="text-xs text-muted-foreground">{label}</Label>
-            <div className="max-h-36 overflow-y-auto space-y-1 pr-1">
-                {options.length === 0 && (
-                    <span className="text-xs text-muted-foreground">Sem opções</span>
+
+            {searchable && (
+                <div className="relative mb-2">
+                    <Search className="absolute left-2 top-1/2 -translate-y-1/2 h-3 w-3 text-muted-foreground" />
+                    <Input
+                        placeholder="Pesquisar..."
+                        value={searchTerm}
+                        onChange={(e) => setSearchTerm(e.target.value)}
+                        className="h-8 pl-7 text-xs bg-secondary/30 border-white/5"
+                    />
+                </div>
+            )}
+
+            <div className="max-h-36 overflow-y-auto space-y-1 pr-1 border-l border-white/5 pl-2">
+                {filteredOptions.length === 0 && (
+                    <span className="text-xs text-muted-foreground block py-1">Sem resultados</span>
                 )}
-                {options.map(opt => (
-                    <label key={opt} className="flex items-center gap-2 cursor-pointer hover:text-foreground text-xs text-muted-foreground">
+                {filteredOptions.map(opt => (
+                    <label key={opt} className="flex items-center gap-2 cursor-pointer hover:text-foreground text-xs text-muted-foreground py-0.5">
                         <input
                             type="checkbox"
                             checked={value.includes(opt)}
                             onChange={() => toggle(opt)}
-                            className="accent-primary"
+                            className="accent-primary h-3 w-3"
                         />
                         <span className="truncate" title={opt}>{opt}</span>
                     </label>
                 ))}
             </div>
-            {value.length > 0 && (
-                <button onClick={() => onChange([])} className="text-xs text-primary hover:underline">
-                    Limpar ({value.length})
-                </button>
-            )}
+
+            <div className="flex items-center justify-between pt-1">
+                {showSelectAll && filteredOptions.length > 0 && (
+                    <button
+                        onClick={toggleAll}
+                        className="text-[10px] text-primary hover:underline font-medium"
+                    >
+                        {filteredOptions.every(opt => value.includes(opt)) ? 'Desmarcar' : 'Selecionar Todos'}
+                    </button>
+                )}
+                {value.length > 0 && (
+                    <button onClick={() => onChange([])} className="ml-auto text-[10px] text-muted-foreground hover:text-primary hover:underline">
+                        Limpar ({value.length})
+                    </button>
+                )}
+            </div>
         </div>
     );
 }
@@ -72,7 +118,7 @@ export function BacklogFiltersPanel({ filters, setFilters, options }: BacklogFil
 
     const activeCount = [
         filters.dateFrom, filters.dateTo,
-        ...filters.codigoProjeto, ...filters.empresaNome, ...filters.fila,
+        ...filters.nomeProjeto, ...filters.empresaNome, ...filters.fila,
         ...filters.estado, ...filters.contaAtribuida, filters.faixaDias,
         ...filters.status, ...filters.statusCliente, ...filters.tipoIncidente,
     ].filter(Boolean).length;
@@ -131,8 +177,8 @@ export function BacklogFiltersPanel({ filters, setFilters, options }: BacklogFil
                                     key={f.key}
                                     onClick={() => setFilters({ ...filters, faixaDias: filters.faixaDias === f.key ? '' : f.key })}
                                     className={`px-3 py-1 rounded-full text-xs font-medium border transition-colors ${filters.faixaDias === f.key
-                                            ? 'border-primary bg-primary/20 text-primary'
-                                            : 'border-border text-muted-foreground hover:border-primary/50'
+                                        ? 'border-primary bg-primary/20 text-primary'
+                                        : 'border-border text-muted-foreground hover:border-primary/50'
                                         }`}
                                     style={{ borderColor: filters.faixaDias === f.key ? f.color : undefined }}
                                 >
@@ -149,12 +195,15 @@ export function BacklogFiltersPanel({ filters, setFilters, options }: BacklogFil
                             options={options.fila}
                             value={filters.fila}
                             onChange={v => setFilters({ ...filters, fila: v })}
+                            showSelectAll
                         />
                         <MultiSelect
-                            label="Projeto (Código)"
-                            options={options.codigoProjeto}
-                            value={filters.codigoProjeto}
-                            onChange={v => setFilters({ ...filters, codigoProjeto: v })}
+                            label="Nome do Projeto"
+                            options={options.nomeProjeto}
+                            value={filters.nomeProjeto}
+                            onChange={v => setFilters({ ...filters, nomeProjeto: v })}
+                            searchable
+                            showSelectAll
                         />
                         <MultiSelect
                             label="Empresa"
@@ -167,12 +216,14 @@ export function BacklogFiltersPanel({ filters, setFilters, options }: BacklogFil
                             options={options.estado}
                             value={filters.estado}
                             onChange={v => setFilters({ ...filters, estado: v })}
+                            showSelectAll
                         />
                         <MultiSelect
                             label="Status"
                             options={options.status}
                             value={filters.status}
                             onChange={v => setFilters({ ...filters, status: v })}
+                            searchable
                         />
                         <MultiSelect
                             label="Status Cliente"
@@ -191,6 +242,8 @@ export function BacklogFiltersPanel({ filters, setFilters, options }: BacklogFil
                             options={options.contaAtribuida}
                             value={filters.contaAtribuida}
                             onChange={v => setFilters({ ...filters, contaAtribuida: v })}
+                            searchable
+                            showSelectAll
                         />
                     </div>
 
