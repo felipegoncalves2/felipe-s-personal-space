@@ -24,7 +24,7 @@ export function AdaptiveDonutChart({
   scale,
   trend = 'stable',
   variation,
-  thresholdExcellent = 98,
+  thresholdExcellent = 93,
   thresholdAttention = 80,
 }: AdaptiveDonutChartProps) {
   // Calculate sizes based on scale

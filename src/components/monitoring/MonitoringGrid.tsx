@@ -45,10 +45,10 @@ export function MonitoringGrid() {
 
     // Filter by status using dynamic thresholds
     if (statusFilter !== 'all') {
-      const thresholdExcellent = settings.threshold_excellent ?? 98;
+      const thresholdExcellent = settings.threshold_excellent ?? 93;
       const thresholdAttention = settings.threshold_attention ?? 80;
       result = result.filter((item) => {
-        const thresholdExcellent = item.meta_excelente ?? settings.threshold_excellent ?? 98;
+        const thresholdExcellent = item.meta_excelente ?? settings.threshold_excellent ?? 93;
         const thresholdAttention = item.meta_atencao ?? settings.threshold_attention ?? 80;
         if (statusFilter === 'green') return item.percentual >= thresholdExcellent;
         if (statusFilter === 'yellow') return item.percentual >= thresholdAttention && item.percentual < thresholdExcellent;
@@ -78,7 +78,7 @@ export function MonitoringGrid() {
   };
 
   const summaryStats = useMemo(() => {
-    const thresholdExcellent = settings.threshold_excellent ?? 98;
+    const thresholdExcellent = settings.threshold_excellent ?? 93;
     const thresholdAttention = settings.threshold_attention ?? 80;
 
     const totalMaquinas = data.reduce((acc, d) => acc + (d.total_base || 0), 0);
@@ -87,8 +87,8 @@ export function MonitoringGrid() {
     const averagePercentual = totalMaquinas > 0 ? (totalMonitoradas / totalMaquinas) * 100 : 0;
 
     return {
-      green: data.filter((d) => d.percentual >= (d.meta_excelente ?? settings.threshold_excellent ?? 98)).length,
-      yellow: data.filter((d) => d.percentual >= (d.meta_atencao ?? settings.threshold_attention ?? 80) && d.percentual < (d.meta_excelente ?? settings.threshold_excellent ?? 98)).length,
+      green: data.filter((d) => d.percentual >= (d.meta_excelente ?? settings.threshold_excellent ?? 93)).length,
+      yellow: data.filter((d) => d.percentual >= (d.meta_atencao ?? settings.threshold_attention ?? 80) && d.percentual < (d.meta_excelente ?? settings.threshold_excellent ?? 93)).length,
       red: data.filter((d) => d.percentual < (d.meta_atencao ?? settings.threshold_attention ?? 80)).length,
       average: averagePercentual,
       totalMaquinas,
@@ -143,7 +143,7 @@ export function MonitoringGrid() {
           className="glass rounded-lg p-4 flex flex-col items-center justify-center"
         >
           <div className="text-2xl font-bold text-chart-green">{summaryStats.green}</div>
-          <div className="text-xs text-muted-foreground mt-1 text-center">Excelente (≥{settings.threshold_excellent ?? 98}%)</div>
+          <div className="text-xs text-muted-foreground mt-1 text-center">Excelente (≥{settings.threshold_excellent ?? 93}%)</div>
         </motion.div>
 
         <motion.div
@@ -305,7 +305,7 @@ export function MonitoringGrid() {
               variation={item.variation}
               anomaly={item.anomaly}
               comparison={item.comparison}
-              thresholdExcellent={item.meta_excelente ?? settings.threshold_excellent ?? 98}
+              thresholdExcellent={item.meta_excelente ?? settings.threshold_excellent ?? 93}
               thresholdAttention={item.meta_atencao ?? settings.threshold_attention ?? 80}
               onClick={() => setSelectedItem({ empresa: item.empresa })}
             />

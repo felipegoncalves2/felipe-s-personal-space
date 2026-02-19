@@ -41,7 +41,7 @@ export function DonutChart({
   comparison,
   onClick,
   onDoubleClick,
-  thresholdExcellent = 98,
+  thresholdExcellent = 93,
   thresholdAttention = 80,
 }: DonutChartProps) {
   const radius = (size - strokeWidth) / 2;

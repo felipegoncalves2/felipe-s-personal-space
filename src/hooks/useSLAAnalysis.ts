@@ -51,14 +51,30 @@ export function useSLAAnalysis(type: 'fila' | 'projetos') {
             const startDateStr = startOfMonth(now).toISOString();
             const endDateStr = now.toISOString();
 
-            // 1. Fetch Detailed Data
-            const { data: rawDetailed, error: detailedError } = await supabase
-                .from('sla_detalhado_rn' as any)
-                .select('*')
-                .gte('created_at', startDateStr)
-                .lte('created_at', endDateStr);
+            // 1. Fetch Detailed Data (Paginated)
+            let rawDetailed: any[] = [];
+            let from = 0;
+            const PAGE_SIZE = 1000;
+            let hasMore = true;
 
-            if (detailedError) throw detailedError;
+            while (hasMore) {
+                const { data: pageData, error: pageError } = await supabase
+                    .from('sla_detalhado_rn' as any)
+                    .select('*')
+                    .gte('created_at', startDateStr)
+                    .lte('created_at', endDateStr)
+                    .range(from, from + PAGE_SIZE - 1);
+
+                if (pageError) throw pageError;
+
+                if (!pageData || pageData.length === 0) {
+                    hasMore = false;
+                } else {
+                    rawDetailed = [...rawDetailed, ...pageData];
+                    from += PAGE_SIZE;
+                    if (pageData.length < PAGE_SIZE) hasMore = false;
+                }
+            }
 
             // Filter by type
             const filteredDetailed = type === 'fila'

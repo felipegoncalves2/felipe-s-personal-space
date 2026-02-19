@@ -17,8 +17,8 @@ export function StorytellingView() {
 
         // 1. Overview Slide
         const total = data.length;
-        const green = data.filter(d => d.percentual >= 98).length;
-        const yellow = data.filter(d => d.percentual >= 80 && d.percentual < 98).length;
+        const green = data.filter(d => d.percentual >= 93).length;
+        const yellow = data.filter(d => d.percentual >= 80 && d.percentual < 93).length;
         const red = data.filter(d => d.percentual < 80).length;
         const avg = data.reduce((acc, curr) => acc + curr.percentual, 0) / total;
 

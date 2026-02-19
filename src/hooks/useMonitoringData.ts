@@ -148,7 +148,7 @@ export function useMonitoringData() {
 
         // Get custom metas or fallback
         const meta = metasByIdentifier.get(item.empresa);
-        const metaExcelente = meta?.meta_excelente ?? 98;
+        const metaExcelente = meta?.meta_excelente ?? 93;
         const metaAtencao = meta?.meta_atencao ?? 80;
 
         if (currentPercentual < metaAtencao) {

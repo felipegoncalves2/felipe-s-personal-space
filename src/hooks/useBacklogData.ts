@@ -22,6 +22,12 @@ export interface BacklogItem {
     situacao_equipamento: string | null;
 }
 
+export interface BacklogIntradiarioRecord {
+    data_snapshot: string;
+    periodo: 'MANHA' | 'FIM_DIA';
+    total_backlog: number;
+}
+
 export interface BacklogFilters {
     dateFrom: string;
     dateTo: string;
@@ -97,6 +103,20 @@ export function useBacklogData() {
     const [lastUpdated, setLastUpdated] = useState<Date | null>(null);
     const [filters, setFilters] = useState<BacklogFilters>(DEFAULT_FILTERS);
 
+    const [intradiaryStats, setIntradiaryStats] = useState<{
+        inicioDia: number | null;
+        fimDia: number | null;
+        variacao: number | null;
+        porcentagemReducao: number | null;
+    }>({
+        inicioDia: null,
+        fimDia: null,
+        variacao: null,
+        porcentagemReducao: null
+    });
+
+    const [historicalIntradiary, setHistoricalIntradiary] = useState<BacklogIntradiarioRecord[]>([]);
+
     const fetchData = useCallback(async () => {
         setLoading(true);
         setError(null);
@@ -147,8 +167,43 @@ export function useBacklogData() {
                 .eq('data_ref', yesterday)
                 .maybeSingle();
 
+            if (yesterdayError && !yesterdayError.message.includes('JSON object requested, multiple (or no) rows returned')) {
+                console.warn('Yesterday snapshot count error:', yesterdayError);
+            }
+
             if (!yesterdayError && yesterdayData) {
                 setYesterdayCount((yesterdayData as any).total_backlog ?? null);
+            }
+
+            // 4. Fetch intradiary data (Today + History for chart)
+            const { data: intradiaryData, error: intraError } = await supabase
+                .from('backlog_inicio_fim_dia' as any)
+                .select('*')
+                .order('data_snapshot', { ascending: true });
+
+            if (!intraError && intradiaryData) {
+                const typedIntra = intradiaryData as unknown as BacklogIntradiarioRecord[];
+                setHistoricalIntradiary(typedIntra);
+
+                const todayStr = format(new Date(), 'yyyy-MM-dd');
+                const todayRecords = typedIntra.filter(r => r.data_snapshot === todayStr);
+
+                const manha = todayRecords.find(r => r.periodo === 'MANHA');
+                const fimDia = todayRecords.find(r => r.periodo === 'FIM_DIA');
+
+                const inicioDoc = manha?.total_backlog ?? null;
+                const fimDoc = fimDia?.total_backlog ?? null;
+                const variacao = (inicioDoc !== null && fimDoc !== null) ? fimDoc - inicioDoc : null;
+                const pct = (variacao !== null && inicioDoc && inicioDoc > 0) ? (variacao / inicioDoc) * 100 : null;
+
+                setIntradiaryStats({
+                    inicioDia: inicioDoc,
+                    fimDia: fimDoc,
+                    variacao,
+                    porcentagemReducao: pct
+                });
+            } else if (intraError) {
+                console.warn('Intradiary fetch error:', intraError.message);
             }
 
             setLastUpdated(new Date());
@@ -233,5 +288,7 @@ export function useBacklogData() {
         filters,
         setFilters,
         filterOptions,
+        intradiaryStats,
+        historicalIntradiary,
     };
 }

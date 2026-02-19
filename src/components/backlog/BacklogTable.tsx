@@ -2,9 +2,17 @@ import { useMemo, useState } from 'react';
 import { BacklogItem, getDiasFaixa } from '@/hooks/useBacklogData';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Search, ArrowUpDown, Download } from 'lucide-react';
+import { Search, ArrowUpDown, Download, X, Filter } from 'lucide-react';
 import { format, parseISO } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
+import { SearchableSelect } from '@/components/common/SearchableSelect';
+import {
+    Select,
+    SelectContent,
+    SelectItem,
+    SelectTrigger,
+    SelectValue,
+} from '@/components/ui/select';
 
 interface BacklogTableProps {
     data: BacklogItem[];
@@ -70,6 +78,24 @@ export function BacklogTable({ data }: BacklogTableProps) {
     const [page, setPage] = useState(1);
     const [pageSize, setPageSize] = useState(25);
 
+    // Advanced Inline Filters
+    const [filterFila, setFilterFila] = useState('all');
+    const [filterProjeto, setFilterProjeto] = useState('all');
+    const [filterStatus, setFilterStatus] = useState('all');
+    const [filterStatusCliente, setFilterStatusCliente] = useState('all');
+
+    const filas = useMemo(() => Array.from(new Set(data.map(d => d.fila).filter(Boolean) as string[])).sort(), [data]);
+    const projetos = useMemo(() => Array.from(new Set(data.map(d => d.nome_projeto).filter(Boolean) as string[])).sort(), [data]);
+    const statuses = useMemo(() => Array.from(new Set(data.map(d => d.status).filter(Boolean) as string[])).sort(), [data]);
+    const statusClientes = useMemo(() => Array.from(new Set(data.map(d => d.status_cliente).filter(Boolean) as string[])).sort(), [data]);
+
+    const activeFilterCount = [
+        filterFila !== 'all',
+        filterProjeto !== 'all',
+        filterStatus !== 'all',
+        filterStatusCliente !== 'all'
+    ].filter(Boolean).length;
+
     const handleSort = (field: SortField) => {
         if (sortField === field) {
             setSortDir(d => d === 'asc' ? 'desc' : 'asc');
@@ -88,10 +114,16 @@ export function BacklogTable({ data }: BacklogTableProps) {
                 (d.numero_referencia ?? '').toLowerCase().includes(q) ||
                 (d.fila ?? '').toLowerCase().includes(q) ||
                 (d.nome_projeto ?? '').toLowerCase().includes(q) ||
-                (d.empresa_nome ?? '').toLowerCase().includes(q) ||
-                (d.codigo_projeto ?? '').toLowerCase().includes(q)
+                (d.empresa_nome ?? '').toLowerCase().includes(q)
             );
         }
+
+        // Apply Advanced Inline Filters
+        if (filterFila !== 'all') result = result.filter(d => d.fila === filterFila);
+        if (filterProjeto !== 'all') result = result.filter(d => d.nome_projeto === filterProjeto);
+        if (filterStatus !== 'all') result = result.filter(d => d.status === filterStatus);
+        if (filterStatusCliente !== 'all') result = result.filter(d => d.status_cliente === filterStatusCliente);
+
         result.sort((a, b) => {
             let va: any = a[sortField];
             let vb: any = b[sortField];
@@ -101,7 +133,7 @@ export function BacklogTable({ data }: BacklogTableProps) {
             return sortDir === 'asc' ? va - vb : vb - va;
         });
         return result;
-    }, [data, search, sortField, sortDir]);
+    }, [data, search, sortField, sortDir, filterFila, filterProjeto, filterStatus, filterStatusCliente]);
 
     const totalPages = Math.max(1, Math.ceil(filtered.length / pageSize));
     const paginated = filtered.slice((page - 1) * pageSize, page * pageSize);
@@ -143,6 +175,76 @@ export function BacklogTable({ data }: BacklogTableProps) {
                 <span className="text-xs text-muted-foreground ml-auto">
                     {filtered.length.toLocaleString('pt-BR')} registros
                 </span>
+            </div>
+
+            {/* Advanced Filters Row */}
+            <div className="glass rounded-xl p-4 border border-white/5 space-y-3">
+                <div className="flex items-center gap-2 text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-1">
+                    <Filter className="h-3 w-3" />
+                    Filtros da Tabela
+                    {activeFilterCount > 0 && (
+                        <span className="bg-primary/20 text-primary px-2 py-0.5 rounded-full text-[10px]">
+                            {activeFilterCount} ativo{activeFilterCount !== 1 ? 's' : ''}
+                        </span>
+                    )}
+                </div>
+
+                <div className="flex flex-wrap gap-3">
+                    <SearchableSelect
+                        options={filas}
+                        value={filterFila}
+                        onValueChange={setFilterFila}
+                        placeholder="Filtrar por Fila"
+                        emptyText="Nenhuma fila encontrada"
+                        className="w-[200px]"
+                    />
+
+                    <SearchableSelect
+                        options={projetos}
+                        value={filterProjeto}
+                        onValueChange={setFilterProjeto}
+                        placeholder="Filtrar por Projeto"
+                        emptyText="Nenhum projeto encontrado"
+                        className="w-[220px]"
+                    />
+
+                    <Select value={filterStatus} onValueChange={setFilterStatus}>
+                        <SelectTrigger className="w-[180px] bg-secondary/30 border-white/5 h-10">
+                            <SelectValue placeholder="Status" />
+                        </SelectTrigger>
+                        <SelectContent>
+                            <SelectItem value="all">Todos os Status</SelectItem>
+                            {statuses.map(s => <SelectItem key={s} value={s}>{s}</SelectItem>)}
+                        </SelectContent>
+                    </Select>
+
+                    <Select value={filterStatusCliente} onValueChange={setFilterStatusCliente}>
+                        <SelectTrigger className="w-[180px] bg-secondary/30 border-white/5 h-10">
+                            <SelectValue placeholder="Status Cliente" />
+                        </SelectTrigger>
+                        <SelectContent>
+                            <SelectItem value="all">Status Cliente (Todos)</SelectItem>
+                            {statusClientes.map(s => <SelectItem key={s} value={s}>{s}</SelectItem>)}
+                        </SelectContent>
+                    </Select>
+
+                    {activeFilterCount > 0 && (
+                        <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => {
+                                setFilterFila('all');
+                                setFilterProjeto('all');
+                                setFilterStatus('all');
+                                setFilterStatusCliente('all');
+                            }}
+                            className="text-xs text-muted-foreground hover:text-destructive gap-1.5"
+                        >
+                            <X className="h-3.5 w-3.5" />
+                            Limpar
+                        </Button>
+                    )}
+                </div>
             </div>
 
             {/* Table */}

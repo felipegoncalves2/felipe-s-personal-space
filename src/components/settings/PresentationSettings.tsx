@@ -40,7 +40,7 @@ function PresentationSettingsForm({ monitoringType }: { monitoringType: Monitori
   const [ignoreGreen, setIgnoreGreen] = useState(false);
   const [ignoreYellow, setIgnoreYellow] = useState(false);
   const [ignoreRed, setIgnoreRed] = useState(false);
-  const [thresholdExcellent, setThresholdExcellent] = useState(98);
+  const [thresholdExcellent, setThresholdExcellent] = useState(93);
   const [thresholdAttention, setThresholdAttention] = useState(80);
   const [thresholdCritical, setThresholdCritical] = useState(80);
 
@@ -53,7 +53,7 @@ function PresentationSettingsForm({ monitoringType }: { monitoringType: Monitori
       setIgnoreGreen(settings.ignore_green);
       setIgnoreYellow(settings.ignore_yellow);
       setIgnoreRed(settings.ignore_red);
-      setThresholdExcellent(settings.threshold_excellent ?? 98);
+      setThresholdExcellent(settings.threshold_excellent ?? 93);
       setThresholdAttention(settings.threshold_attention ?? 80);
       setThresholdCritical(settings.threshold_critical ?? 80);
     }
@@ -176,7 +176,7 @@ function PresentationSettingsForm({ monitoringType }: { monitoringType: Monitori
               min={0}
               max={100}
               step={0.1}
-              placeholder="Ex: 98"
+              placeholder="Ex: 93"
               value={maxPercentage}
               onChange={(e) => setMaxPercentage(e.target.value)}
               className="bg-secondary/50"
@@ -243,7 +243,7 @@ function PresentationSettingsForm({ monitoringType }: { monitoringType: Monitori
               onChange={(e) => setThresholdExcellent(Math.min(100, Math.max(0, parseFloat(e.target.value) || 0)))}
               className="bg-secondary/50 border-chart-green/50 focus:border-chart-green"
             />
-            <p className="text-xs text-muted-foreground">Padrão: 98%</p>
+            <p className="text-xs text-muted-foreground">Padrão: 93%</p>
           </div>
 
           <div className="space-y-2">

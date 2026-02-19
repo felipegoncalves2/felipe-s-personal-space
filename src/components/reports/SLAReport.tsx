@@ -264,7 +264,7 @@ export function SLAReport({ type }: SLAReportProps) {
                                         <TableCell>{item.fora}</TableCell>
                                         <TableCell>{item.total}</TableCell>
                                         <TableCell>
-                                            <span className={`font-bold ${item.percentual >= 98 ? 'text-chart-green' :
+                                            <span className={`font-bold ${item.percentual >= 93 ? 'text-chart-green' :
                                                 item.percentual >= 80 ? 'text-chart-yellow' : 'text-chart-red'
                                                 }`}>
                                                 {item.percentual}%

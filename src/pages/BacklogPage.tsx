@@ -1,17 +1,18 @@
 import { useState } from 'react';
-import { motion } from 'framer-motion';
-import { RefreshCw, Package, Clock, History, Activity } from 'lucide-react';
-import { Button } from '@/components/ui/button';
+import { RefreshCw, Package, Clock, History, LayoutDashboard, AlertCircle } from 'lucide-react';
 import { useBacklogData } from '@/hooks/useBacklogData';
 import { BacklogKPIs } from '@/components/backlog/BacklogKPIs';
 import { BacklogAgingChart } from '@/components/backlog/BacklogAgingChart';
-import { BacklogOrigemChart } from '@/components/backlog/BacklogOrigemChart';
 import { BacklogFluxoChart } from '@/components/backlog/BacklogFluxoChart';
 import { BacklogDistribuicao } from '@/components/backlog/BacklogDistribuicao';
 import { BacklogHeatmap } from '@/components/backlog/BacklogHeatmap';
 import { BacklogTable } from '@/components/backlog/BacklogTable';
 import { BacklogFiltersPanel } from '@/components/backlog/BacklogFilters';
 import { BacklogHistorico } from '@/components/backlog/BacklogHistorico';
+import { BacklogIntradiarioKPIs } from '@/components/backlog/BacklogIntradiarioKPIs';
+import { BacklogVariacaoDiariaChart } from '@/components/backlog/BacklogVariacaoDiariaChart';
+import { BacklogFluxoOperacionalChart } from '@/components/backlog/BacklogFluxoOperacionalChart';
+import { useFluxoOperacional } from '@/hooks/useFluxoOperacional';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 
@@ -21,13 +22,15 @@ function SectionCard({
     title,
     description,
     children,
+    className = ""
 }: {
     title: string;
     description?: string;
     children: React.ReactNode;
+    className?: string;
 }) {
     return (
-        <div className="glass rounded-xl border border-border/50 p-6 space-y-4">
+        <div className={`glass rounded-xl border border-border/50 p-6 space-y-4 ${className}`}>
             <div>
                 <h3 className="text-base font-semibold text-foreground">{title}</h3>
                 {description && <p className="text-xs text-muted-foreground mt-0.5">{description}</p>}
@@ -56,145 +59,170 @@ export function BacklogPage() {
         filters,
         setFilters,
         filterOptions,
+        intradiaryStats,
+        historicalIntradiary
     } = useBacklogData();
 
+    const {
+        data: fluxoData,
+        loading: fluxoLoading,
+        error: fluxoError
+    } = useFluxoOperacional();
+
     return (
-        <motion.div
-            initial={{ opacity: 0, y: 10 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.3 }}
-            className="space-y-6"
-        >
-            {/* Header */}
-            <div className="flex items-center justify-between flex-wrap gap-4">
+        <div className="flex flex-col gap-6 animate-in fade-in duration-500">
+            <header className="flex flex-col md:flex-row md:items-center justify-between gap-4">
                 <div>
-                    <h2 className="text-2xl font-bold text-foreground flex items-center gap-2">
-                        <Package className="h-6 w-6 text-primary" />
+                    <h1 className="text-3xl font-bold tracking-tight text-foreground flex items-center gap-3">
                         Backlog Operacional
-                    </h2>
-                    <p className="text-muted-foreground text-sm mt-1">
-                        Painel analítico estratégico de backlog
-                    </p>
+                        <div className="flex items-center gap-2 px-3 py-1 bg-primary/10 border border-primary/20 rounded-full">
+                            <span className="relative flex h-2 w-2">
+                                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-primary opacity-75"></span>
+                                <span className="relative inline-flex rounded-full h-2 w-2 bg-primary"></span>
+                            </span>
+                            <span className="text-[10px] font-bold uppercase tracking-wider text-primary">Live Sync</span>
+                        </div>
+                    </h1>
+                    <p className="text-muted-foreground mt-1">Gestão de chamados, aging e performance do parque</p>
                 </div>
-                <div className="flex items-center gap-3 flex-wrap">
-                    {/* View Mode Toggle */}
-                    <div className="flex items-center gap-1 bg-secondary/30 rounded-lg p-1">
-                        <Button
-                            variant={viewMode === 'realtime' ? 'secondary' : 'ghost'}
-                            size="sm"
-                            onClick={() => setViewMode('realtime')}
-                            className="gap-2 h-8"
+
+                <div className="flex items-center gap-3 bg-secondary/30 p-1 rounded-lg border border-border/50 self-start md:self-center">
+                    <button
+                        onClick={() => setViewMode('realtime')}
+                        className={`flex items-center gap-2 px-4 py-2 rounded-md transition-all duration-300 text-sm font-medium ${viewMode === 'realtime' ? 'bg-primary text-primary-foreground shadow-lg' : 'hover:bg-primary/10 text-muted-foreground'}`}
+                    >
+                        <LayoutDashboard className="h-4 w-4" />
+                        Realtime
+                    </button>
+                    <button
+                        onClick={() => setViewMode('historico')}
+                        className={`flex items-center gap-2 px-4 py-2 rounded-md transition-all duration-300 text-sm font-medium ${viewMode === 'historico' ? 'bg-primary text-primary-foreground shadow-lg' : 'hover:bg-primary/10 text-muted-foreground'}`}
+                    >
+                        <History className="h-4 w-4" />
+                        Histórico
+                    </button>
+                </div>
+            </header>
+
+            {viewMode === 'historico' ? (
+                <BacklogHistorico />
+            ) : (
+                <>
+                    <div className="flex justify-between items-center bg-secondary/10 p-4 rounded-xl border border-border/50">
+                        <div className="flex items-center gap-4">
+                            <div className="text-sm">
+                                <span className="text-muted-foreground">Última atualização:</span>
+                                <span className="ml-2 font-mono font-bold text-primary">
+                                    {lastUpdated ? format(lastUpdated, "HH:mm:ss") : "--:--:--"}
+                                </span>
+                            </div>
+                        </div>
+                        <button
+                            onClick={refetch}
+                            disabled={loading}
+                            className="flex items-center gap-2 px-4 py-2 rounded-lg bg-secondary/50 hover:bg-secondary border border-border/50 transition-all active:scale-95 disabled:opacity-50"
                         >
-                            <Activity className="h-3.5 w-3.5" />
-                            Tempo Real
-                        </Button>
-                        <Button
-                            variant={viewMode === 'historico' ? 'secondary' : 'ghost'}
-                            size="sm"
-                            onClick={() => setViewMode('historico')}
-                            className="gap-2 h-8"
-                        >
-                            <History className="h-3.5 w-3.5" />
-                            Histórico
-                        </Button>
+                            <RefreshCw className={`h-4 w-4 ${loading ? 'animate-spin text-primary' : ''}`} />
+                            <span className="text-sm font-medium">Atualizar Agora</span>
+                        </button>
                     </div>
 
-                    {viewMode === 'realtime' && (
-                        <>
-                            {lastUpdated && (
-                                <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
-                                    <Clock className="h-3.5 w-3.5" />
-                                    Atualizado em {format(lastUpdated, "dd/MM/yyyy 'às' HH:mm", { locale: ptBR })}
-                                </div>
-                            )}
-                            <Button
-                                variant="outline"
-                                size="sm"
-                                onClick={refetch}
-                                disabled={loading}
-                                className="gap-2"
-                            >
-                                <RefreshCw className={`h-4 w-4 ${loading ? 'animate-spin' : ''}`} />
-                                Atualizar
-                            </Button>
-                        </>
-                    )}
-                </div>
-            </div>
-
-            {/* Histórico View */}
-            {viewMode === 'historico' && <BacklogHistorico />}
-
-            {/* Realtime View */}
-            {viewMode === 'realtime' && (
-                <>
-                    {/* Error */}
                     {error && (
-                        <div className="glass rounded-xl border border-destructive/50 bg-destructive/10 p-4 text-sm text-destructive">
-                            ⚠️ {error}
+                        <div className="p-4 rounded-lg bg-red-500/10 border border-red-500/20 text-red-400 flex items-center gap-3">
+                            <AlertCircle className="h-5 w-5" />
+                            <p>{error}</p>
                         </div>
                     )}
 
-                    {/* Global Filters */}
                     <BacklogFiltersPanel
                         filters={filters}
                         setFilters={setFilters}
                         options={filterOptions}
                     />
 
-                    {/* BLOCO 1 — KPIs */}
+                    {/* KPIs Intradiários */}
+                    <div className="mt-2">
+                        <div className="flex items-center gap-2 mb-4">
+                            <div className="h-1 w-8 bg-primary rounded-full"></div>
+                            <h2 className="text-sm font-bold uppercase tracking-widest text-muted-foreground">Performance do Dia</h2>
+                        </div>
+                        <BacklogIntradiarioKPIs
+                            inicioDia={intradiaryStats.inicioDia}
+                            fimDia={intradiaryStats.fimDia}
+                            variacao={intradiaryStats.variacao}
+                            porcentagemReducao={intradiaryStats.porcentagemReducao}
+                        />
+                    </div>
+
+                    {/* KPIs Principais */}
                     {loading ? (
                         <div className="grid grid-cols-2 md:grid-cols-3 xl:grid-cols-6 gap-4">
                             {Array.from({ length: 6 }).map((_, i) => <SkeletonBlock key={i} height="h-28" />)}
                         </div>
                     ) : (
-                        <BacklogKPIs data={filteredData} yesterdayCount={yesterdayCount} dailyKPI={dailyKPI} />
+                        <BacklogKPIs
+                            data={filteredData}
+                            yesterdayCount={yesterdayCount}
+                            dailyKPI={dailyKPI}
+                        />
                     )}
 
-                    {/* BLOCO 2 — Aging Chart Geral */}
+                    {/* Evolução da Variação e Aging */}
+                    <div className="grid grid-cols-1 xl:grid-cols-2 gap-6">
+                        <BacklogVariacaoDiariaChart data={historicalIntradiary} />
+                        <SectionCard
+                            title="📊 AGING de Chamados / FILA"
+                            description="Volume de chamados por faixa de dias em aberto, agrupado por fila"
+                        >
+                            {loading ? <SkeletonBlock height="h-[430px]" /> : <BacklogAgingChart data={filteredData} />}
+                        </SectionCard>
+                    </div>
+
+                    {/* Novo Fluxo Operacional do Mês */}
                     <SectionCard
-                        title="📊 AGING de Chamados / FILA"
-                        description="Volume de chamados por faixa de dias em aberto, agrupado por fila"
+                        title="📊 Fluxo Operacional do Mês"
+                        description="Comparativo diário de chamados abertos vs. encerrados e evolução do saldo"
                     >
-                        {loading ? <SkeletonBlock height="h-[620px]" /> : <BacklogAgingChart data={filteredData} />}
+                        <BacklogFluxoOperacionalChart data={fluxoData} loading={fluxoLoading} />
                     </SectionCard>
 
-                    {/* BLOCO 2B — Aging Chart PARADO */}
-                    <SectionCard
-                        title="🔴 AGING de Chamados / STATUS CLIENTE (PARADO)"
-                        description="Somente chamados com status_cliente contendo 'Parado' — identifique risco operacional imediato"
-                    >
-                        {loading ? <SkeletonBlock height="h-[620px]" /> : (
-                            <BacklogAgingChart data={filteredData} filterStatusCliente="Parado" />
-                        )}
-                    </SectionCard>
+                    {/* Aging Parado e Fluxo */}
+                    <div className="grid grid-cols-1 xl:grid-cols-2 gap-6">
+                        <SectionCard
+                            title="🔴 AGING de Chamados / STATUS CLIENTE (PARADO)"
+                            description="Somente chamados com status_cliente contendo 'Parado'"
+                        >
+                            {loading ? <SkeletonBlock height="h-[430px]" /> : (
+                                <BacklogAgingChart data={filteredData} filterStatusCliente="Parado" />
+                            )}
+                        </SectionCard>
 
-                    {/* BLOCO 3 — Fluxo */}
-                    <SectionCard
-                        title="📈 Fluxo Operacional"
-                        description="Chamados abertos por dia e backlog acumulado"
-                    >
-                        {loading ? <SkeletonBlock height="h-[520px]" /> : <BacklogFluxoChart data={filteredData} />}
-                    </SectionCard>
+                        <SectionCard
+                            title="📈 Fluxo Operacional"
+                            description="Chamados abertos por dia e backlog acumulado"
+                        >
+                            {loading ? <SkeletonBlock height="h-[430px]" /> : <BacklogFluxoChart data={filteredData} />}
+                        </SectionCard>
+                    </div>
 
-                    {/* BLOCO 5 + 6 — Distribuição e Heatmap */}
+                    {/* Distribuição e Heatmap */}
                     <div className="grid grid-cols-1 xl:grid-cols-2 gap-6">
                         <SectionCard
                             title="🍩 Distribuição Atual"
                             description="Proporção do backlog por dimensão selecionada"
                         >
-                            {loading ? <SkeletonBlock height="h-[520px]" /> : <BacklogDistribuicao data={filteredData} />}
+                            {loading ? <SkeletonBlock height="h-[430px]" /> : <BacklogDistribuicao data={filteredData} />}
                         </SectionCard>
 
                         <SectionCard
                             title="🔥 Heatmap Estratégico"
                             description="Fila × Faixa de dias — identifique gargalos rapidamente"
                         >
-                            {loading ? <SkeletonBlock height="h-[520px]" /> : <BacklogHeatmap data={filteredData} />}
+                            {loading ? <SkeletonBlock height="h-[430px]" /> : <BacklogHeatmap data={filteredData} />}
                         </SectionCard>
                     </div>
 
-                    {/* BLOCO 7 — Tabela */}
+                    {/* Tabela Analítica */}
                     <SectionCard
                         title="📋 Tabela Analítica Completa"
                         description="Todos os chamados em aberto com busca, ordenação e exportação"
@@ -203,6 +231,6 @@ export function BacklogPage() {
                     </SectionCard>
                 </>
             )}
-        </motion.div>
+        </div>
     );
 }

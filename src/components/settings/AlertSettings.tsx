@@ -76,8 +76,8 @@ function AlertForm({ type }: { type: AlertMonitoringType }) {
     }
 
     // Hardcoded limits for display only (as per requirement)
-    // Assuming typical limits: Green >= 98, Red < 80.
-    const limits = { green: '≥ 98%', yellow: '80% - 97%', red: '< 80%' };
+    // Assuming typical limits: Green >= 93, Red < 80.
+    const limits = { green: '≥ 93%', yellow: '80% - 92%', red: '< 80%' };
 
     return (
         <div className="space-y-8 animate-in fade-in slide-in-from-bottom-2 duration-500">

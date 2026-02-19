@@ -65,7 +65,7 @@ export function useSLAData(type: SLAType) {
 
         // Get custom metas or fallback
         const meta = metasByIdentifier.get(name);
-        const metaExcelente = meta?.meta_excelente ?? 98;
+        const metaExcelente = meta?.meta_excelente ?? 93;
         const metaAtencao = meta?.meta_atencao ?? 80;
 
         if (percentual < metaAtencao) {

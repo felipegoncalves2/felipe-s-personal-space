@@ -99,7 +99,7 @@ export default function PresentationPage() {
       }
 
       // Filter by status
-      const thresholdExcellent = settings.threshold_excellent ?? 98;
+      const thresholdExcellent = settings.threshold_excellent ?? 93;
       const thresholdAttention = settings.threshold_attention ?? 80;
       const isGreen = percentual >= thresholdExcellent;
       const isYellow = percentual >= thresholdAttention && percentual < thresholdExcellent;
@@ -369,7 +369,7 @@ export default function PresentationPage() {
           style={{ height: KPI_BAR_HEIGHT }}
         >
           <div className="flex items-center gap-8 px-12 py-4 rounded-full bg-background/50 border border-border/30 shadow-lg">
-            <span className={`text-8xl font-extrabold ${averageKPI >= (settings.threshold_excellent ?? 98) ? 'text-chart-green' :
+            <span className={`text-8xl font-extrabold ${averageKPI >= (settings.threshold_excellent ?? 93) ? 'text-chart-green' :
               averageKPI >= (settings.threshold_attention ?? 80) ? 'text-chart-yellow' : 'text-chart-red'
               }`}>
               {averageKPI.toFixed(2)}%
@@ -424,7 +424,7 @@ export default function PresentationPage() {
                       scale={layout.scale}
                       trend={item.trend}
                       variation={item.variation}
-                      thresholdExcellent={item.meta_excelente ?? settings.threshold_excellent ?? 98}
+                      thresholdExcellent={item.meta_excelente ?? settings.threshold_excellent ?? 93}
                       thresholdAttention={item.meta_atencao ?? settings.threshold_attention ?? 80}
                     />
                   </motion.div>
@@ -453,7 +453,7 @@ export default function PresentationPage() {
                     scale={layout.scale}
                     trend={mpsItem.trend}
                     variation={mpsItem.variation}
-                    thresholdExcellent={settings.threshold_excellent ?? 98}
+                    thresholdExcellent={settings.threshold_excellent ?? 93}
                     thresholdAttention={settings.threshold_attention ?? 80}
                   />
                 </motion.div>

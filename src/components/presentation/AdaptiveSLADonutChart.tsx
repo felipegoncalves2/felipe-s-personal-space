@@ -26,7 +26,7 @@ export function AdaptiveSLADonutChart({
   scale,
   trend = 'stable',
   variation,
-  thresholdExcellent = 98,
+  thresholdExcellent = 93,
   thresholdAttention = 80,
 }: AdaptiveSLADonutChartProps) {
   // Calculate sizes based on scale - MATCHING AdaptiveDonutChart exactly

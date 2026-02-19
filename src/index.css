@@ -36,10 +36,10 @@
     /* Status Colors */
     --success: 142 76% 45%;
     --success-foreground: 0 0% 2%;
-    
+
     --warning: 45 93% 47%;
     --warning-foreground: 0 0% 2%;
-    
+
     --danger: 0 84% 60%;
     --danger-foreground: 0 0% 98%;
 
@@ -158,9 +158,12 @@
   }
 
   @keyframes float {
-    0%, 100% {
+
+    0%,
+    100% {
       transform: translateY(0px);
     }
+
     50% {
       transform: translateY(-10px);
     }
