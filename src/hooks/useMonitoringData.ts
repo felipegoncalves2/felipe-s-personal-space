@@ -178,7 +178,22 @@ export function useMonitoringData() {
       });
 
       setData(enrichedData);
-      setLastUpdated(new Date());
+      
+      // Use the latest data_gravacao from the enriched data as the lastUpdated time
+      if (enrichedData.length > 0) {
+        const latestTimestamp = enrichedData.reduce((latest, item) => {
+          const currentTime = new Date(item.data_gravacao).getTime();
+          return currentTime > latest ? currentTime : latest;
+        }, 0);
+        
+        if (latestTimestamp > 0) {
+          setLastUpdated(new Date(latestTimestamp));
+        } else {
+          setLastUpdated(new Date());
+        }
+      } else {
+        setLastUpdated(new Date());
+      }
     } catch (err: any) {
       console.error('Fetch monitoring data error:', err);
       setError(err.message || 'Erro de conexão');

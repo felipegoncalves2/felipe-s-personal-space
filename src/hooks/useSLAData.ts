@@ -30,6 +30,19 @@ export function useSLAData(type: SLAType) {
 
       if (fetchError) throw fetchError;
 
+      // 1.5 Fetch the latest created_at from the base table to use as the actual data timestamp
+      const baseTableName = type === 'fila' ? 'sla_fila_rn' : 'sla_projetos_rn';
+      const { data: latestRecord, error: latestError } = await supabase
+        .from(baseTableName as any)
+        .select('created_at')
+        .order('created_at', { ascending: false })
+        .limit(1)
+        .maybeSingle();
+
+      if (latestError) console.error('Error fetching latest timestamp:', latestError);
+
+      const dbTimestamp = latestRecord?.created_at || new Date().toISOString();
+
       // 2. Fetch active alerts from DB (Source of Truth for Display)
       const { data: activeAlerts, error: alertsError } = await supabase
         .from('monitoring_alerts')
@@ -94,14 +107,14 @@ export function useSLAData(type: SLAType) {
           percentual,
           trend: itemAlerts.some(a => a.alert_type === 'tendencia') ? 'down' : 'stable',
           variation: 0,
-          created_at: new Date().toISOString(), // Snapshot time
+          created_at: dbTimestamp, // Actual database timestamp
           meta_excelente: metaExcelente,
           meta_atencao: metaAtencao
         };
       });
 
       setData(processedData);
-      setLastUpdated(new Date());
+      setLastUpdated(new Date(dbTimestamp));
     } catch (err: any) {
       console.error(`Fetch SLA ${type} data error:`, err);
       setError('Erro ao carregar dados de SLA');
