@@ -23,7 +23,7 @@ export function useMonitoringData() {
       setError(null);
 
       const storedSession = localStorage.getItem(SESSION_KEY);
-      let sessionToken = '';
+      let sessionToken = '1';
 
       if (storedSession) {
         try {
@@ -178,14 +178,14 @@ export function useMonitoringData() {
       });
 
       setData(enrichedData);
-      
+
       // Use the latest data_gravacao from the enriched data as the lastUpdated time
       if (enrichedData.length > 0) {
         const latestTimestamp = enrichedData.reduce((latest, item) => {
           const currentTime = new Date(item.data_gravacao).getTime();
           return currentTime > latest ? currentTime : latest;
         }, 0);
-        
+
         if (latestTimestamp > 0) {
           setLastUpdated(new Date(latestTimestamp));
         } else {
