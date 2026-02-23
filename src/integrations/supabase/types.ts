@@ -14,6 +14,204 @@ export type Database = {
   }
   public: {
     Tables: {
+      backlog_analytics: {
+        Row: {
+          codigo_projeto: string
+          data_ref: string
+          empresa: string
+          faixa_dias: string
+          fila: string
+          total: number | null
+        }
+        Insert: {
+          codigo_projeto: string
+          data_ref: string
+          empresa: string
+          faixa_dias: string
+          fila: string
+          total?: number | null
+        }
+        Update: {
+          codigo_projeto?: string
+          data_ref?: string
+          empresa?: string
+          faixa_dias?: string
+          fila?: string
+          total?: number | null
+        }
+        Relationships: []
+      }
+      backlog_monitoramento: {
+        Row: {
+          cidade: string | null
+          codigo_projeto: string | null
+          conta_atribuida: string | null
+          created_at: string | null
+          data_criacao: string | null
+          dias_em_aberto: number | null
+          empresa: string | null
+          empresa_nome: string | null
+          estado: string | null
+          fila: string | null
+          id: number
+          mes_abertura: string | null
+          nome_fantasia: string | null
+          nome_projeto: string | null
+          numero_referencia: string
+          numero_serie: string | null
+          produto_descricao: string | null
+          servico: string | null
+          situacao_equipamento: string | null
+          solucao_hardware: string | null
+          solucao_servico_software: string | null
+          status: string | null
+          status_cliente: string | null
+          tempo_atendimento_formatado: string | null
+          tempo_atendimento_horas: number | null
+          tempo_atendimento_segundos: number | null
+          tipo_incidente: string | null
+          tipo_problema_hardware: string | null
+          tipo_problema_servico: string | null
+          troca_tecnica: string | null
+        }
+        Insert: {
+          cidade?: string | null
+          codigo_projeto?: string | null
+          conta_atribuida?: string | null
+          created_at?: string | null
+          data_criacao?: string | null
+          dias_em_aberto?: number | null
+          empresa?: string | null
+          empresa_nome?: string | null
+          estado?: string | null
+          fila?: string | null
+          id?: number
+          mes_abertura?: string | null
+          nome_fantasia?: string | null
+          nome_projeto?: string | null
+          numero_referencia: string
+          numero_serie?: string | null
+          produto_descricao?: string | null
+          servico?: string | null
+          situacao_equipamento?: string | null
+          solucao_hardware?: string | null
+          solucao_servico_software?: string | null
+          status?: string | null
+          status_cliente?: string | null
+          tempo_atendimento_formatado?: string | null
+          tempo_atendimento_horas?: number | null
+          tempo_atendimento_segundos?: number | null
+          tipo_incidente?: string | null
+          tipo_problema_hardware?: string | null
+          tipo_problema_servico?: string | null
+          troca_tecnica?: string | null
+        }
+        Update: {
+          cidade?: string | null
+          codigo_projeto?: string | null
+          conta_atribuida?: string | null
+          created_at?: string | null
+          data_criacao?: string | null
+          dias_em_aberto?: number | null
+          empresa?: string | null
+          empresa_nome?: string | null
+          estado?: string | null
+          fila?: string | null
+          id?: number
+          mes_abertura?: string | null
+          nome_fantasia?: string | null
+          nome_projeto?: string | null
+          numero_referencia?: string
+          numero_serie?: string | null
+          produto_descricao?: string | null
+          servico?: string | null
+          situacao_equipamento?: string | null
+          solucao_hardware?: string | null
+          solucao_servico_software?: string | null
+          status?: string | null
+          status_cliente?: string | null
+          tempo_atendimento_formatado?: string | null
+          tempo_atendimento_horas?: number | null
+          tempo_atendimento_segundos?: number | null
+          tipo_incidente?: string | null
+          tipo_problema_hardware?: string | null
+          tipo_problema_servico?: string | null
+          troca_tecnica?: string | null
+        }
+        Relationships: []
+      }
+      backlog_snapshot: {
+        Row: {
+          codigo_projeto: string | null
+          created_at: string | null
+          data_snapshot: string
+          dias_em_aberto: number | null
+          empresa: string | null
+          fila: string | null
+          id: number
+          numero_referencia: string
+          periodo: string | null
+          situacao_equipamento: string | null
+          status: string | null
+          status_cliente: string | null
+        }
+        Insert: {
+          codigo_projeto?: string | null
+          created_at?: string | null
+          data_snapshot: string
+          dias_em_aberto?: number | null
+          empresa?: string | null
+          fila?: string | null
+          id?: number
+          numero_referencia: string
+          periodo?: string | null
+          situacao_equipamento?: string | null
+          status?: string | null
+          status_cliente?: string | null
+        }
+        Update: {
+          codigo_projeto?: string | null
+          created_at?: string | null
+          data_snapshot?: string
+          dias_em_aberto?: number | null
+          empresa?: string | null
+          fila?: string | null
+          id?: number
+          numero_referencia?: string
+          periodo?: string | null
+          situacao_equipamento?: string | null
+          status?: string | null
+          status_cliente?: string | null
+        }
+        Relationships: []
+      }
+      backlog_total_diario: {
+        Row: {
+          acima_30: number | null
+          acima_50: number | null
+          created_at: string | null
+          data_ref: string
+          idade_media: number | null
+          total_backlog: number
+        }
+        Insert: {
+          acima_30?: number | null
+          acima_50?: number | null
+          created_at?: string | null
+          data_ref: string
+          idade_media?: number | null
+          total_backlog: number
+        }
+        Update: {
+          acima_30?: number | null
+          acima_50?: number | null
+          created_at?: string | null
+          data_ref?: string
+          idade_media?: number | null
+          total_backlog?: number
+        }
+        Relationships: []
+      }
       monitoramento_parque: {
         Row: {
           data_gravacao: string
@@ -169,8 +367,13 @@ export type Database = {
           max_percentage: number | null
           min_percentage: number | null
           monitoring_type: string
+          theme_danger: string | null
+          theme_success: string | null
+          theme_warning: string | null
+          threshold_atencao: number | null
           threshold_attention: number | null
           threshold_critical: number | null
+          threshold_excelente: number | null
           threshold_excellent: number | null
           updated_at: string
         }
@@ -185,8 +388,13 @@ export type Database = {
           max_percentage?: number | null
           min_percentage?: number | null
           monitoring_type?: string
+          theme_danger?: string | null
+          theme_success?: string | null
+          theme_warning?: string | null
+          threshold_atencao?: number | null
           threshold_attention?: number | null
           threshold_critical?: number | null
+          threshold_excelente?: number | null
           threshold_excellent?: number | null
           updated_at?: string
         }
@@ -201,8 +409,13 @@ export type Database = {
           max_percentage?: number | null
           min_percentage?: number | null
           monitoring_type?: string
+          theme_danger?: string | null
+          theme_success?: string | null
+          theme_warning?: string | null
+          threshold_atencao?: number | null
           threshold_attention?: number | null
           threshold_critical?: number | null
+          threshold_excelente?: number | null
           threshold_excellent?: number | null
           updated_at?: string
         }
@@ -489,9 +702,85 @@ export type Database = {
         }
         Relationships: []
       }
+      sla_metas: {
+        Row: {
+          ativo: boolean
+          created_at: string | null
+          id: string
+          identificador: string
+          meta_atencao: number | null
+          meta_excelente: number | null
+          tipo: string
+          valid_from: string
+          valid_to: string | null
+        }
+        Insert: {
+          ativo?: boolean
+          created_at?: string | null
+          id?: string
+          identificador: string
+          meta_atencao?: number | null
+          meta_excelente?: number | null
+          tipo: string
+          valid_from?: string
+          valid_to?: string | null
+        }
+        Update: {
+          ativo?: boolean
+          created_at?: string | null
+          id?: string
+          identificador?: string
+          meta_atencao?: number | null
+          meta_excelente?: number | null
+          tipo?: string
+          valid_from?: string
+          valid_to?: string | null
+        }
+        Relationships: []
+      }
+      sla_metas_log: {
+        Row: {
+          alterado_em: string
+          alterado_por: string | null
+          id: string
+          identificador: string
+          meta_atencao_new: number | null
+          meta_atencao_old: number | null
+          meta_excelente_new: number | null
+          meta_excelente_old: number | null
+          meta_id: string
+          tipo: string
+        }
+        Insert: {
+          alterado_em?: string
+          alterado_por?: string | null
+          id?: string
+          identificador: string
+          meta_atencao_new?: number | null
+          meta_atencao_old?: number | null
+          meta_excelente_new?: number | null
+          meta_excelente_old?: number | null
+          meta_id: string
+          tipo: string
+        }
+        Update: {
+          alterado_em?: string
+          alterado_por?: string | null
+          id?: string
+          identificador?: string
+          meta_atencao_new?: number | null
+          meta_atencao_old?: number | null
+          meta_excelente_new?: number | null
+          meta_excelente_old?: number | null
+          meta_id?: string
+          tipo?: string
+        }
+        Relationships: []
+      }
       sla_projetos_rn: {
         Row: {
           created_at: string | null
+          created_at_hour: string | null
           dentro: number
           fora: number
           id: number
@@ -501,6 +790,7 @@ export type Database = {
         }
         Insert: {
           created_at?: string | null
+          created_at_hour?: string | null
           dentro?: number
           fora?: number
           id?: number
@@ -510,6 +800,7 @@ export type Database = {
         }
         Update: {
           created_at?: string | null
+          created_at_hour?: string | null
           dentro?: number
           fora?: number
           id?: number
@@ -610,7 +901,77 @@ export type Database = {
       }
     }
     Views: {
-      [_ in never]: never
+      backlog_inicio_fim_dia: {
+        Row: {
+          data_snapshot: string | null
+          periodo: string | null
+          total_backlog: number | null
+        }
+        Relationships: []
+      }
+      backlog_variacao_diaria: {
+        Row: {
+          data_snapshot: string | null
+          variacao: number | null
+        }
+        Relationships: []
+      }
+      mv_sla_fila_rn: {
+        Row: {
+          dentro: number | null
+          fila: string | null
+          fora: number | null
+          percentual: number | null
+          total: number | null
+        }
+        Relationships: []
+      }
+      mv_sla_projetos_rn: {
+        Row: {
+          dentro: number | null
+          fora: number | null
+          nome_projeto: string | null
+          percentual: number | null
+          total: number | null
+        }
+        Relationships: []
+      }
+      v_sla_metas_ativas: {
+        Row: {
+          ativo: boolean | null
+          created_at: string | null
+          id: string | null
+          identificador: string | null
+          meta_atencao: number | null
+          meta_excelente: number | null
+          tipo: string | null
+          valid_from: string | null
+          valid_to: string | null
+        }
+        Insert: {
+          ativo?: boolean | null
+          created_at?: string | null
+          id?: string | null
+          identificador?: string | null
+          meta_atencao?: number | null
+          meta_excelente?: number | null
+          tipo?: string | null
+          valid_from?: string | null
+          valid_to?: string | null
+        }
+        Update: {
+          ativo?: boolean | null
+          created_at?: string | null
+          id?: string | null
+          identificador?: string | null
+          meta_atencao?: number | null
+          meta_excelente?: number | null
+          tipo?: string | null
+          valid_from?: string | null
+          valid_to?: string | null
+        }
+        Relationships: []
+      }
     }
     Functions: {
       fn_generate_sla_snapshots: { Args: never; Returns: undefined }
@@ -635,6 +996,15 @@ export type Database = {
           percentual: number
           total_base: number
           total_sem_monitoramento: number
+        }[]
+      }
+      get_sla_daily_evolution: {
+        Args: { p_month?: string }
+        Returns: {
+          dentro: number
+          dia: string
+          fora: number
+          percentual: number
         }[]
       }
       get_sla_history: {
@@ -676,7 +1046,14 @@ export type Database = {
           total_geral: number
         }[]
       }
+      processar_backlog_diario:
+        | { Args: never; Returns: undefined }
+        | { Args: { p_periodo: string }; Returns: undefined }
       record_sla_snapshot_internal: { Args: never; Returns: undefined }
+      refresh_mv_sla_fila: { Args: never; Returns: undefined }
+      refresh_mv_sla_projetos: { Args: never; Returns: undefined }
+      truncate_backlog_monitoramento: { Args: never; Returns: undefined }
+      truncate_sla_detalhado_rn: { Args: never; Returns: undefined }
     }
     Enums: {
       [_ in never]: never
