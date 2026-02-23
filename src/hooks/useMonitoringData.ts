@@ -23,7 +23,7 @@ export function useMonitoringData() {
       setError(null);
 
       const storedSession = localStorage.getItem(SESSION_KEY);
-      let sessionToken = '';
+      let sessionToken = '1';
 
       if (storedSession) {
         try {
