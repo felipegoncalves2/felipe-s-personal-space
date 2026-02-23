@@ -31,7 +31,7 @@ export function useFluxoOperacional() {
 
             // 1. Fetch created tickets for the month
             const { data: openedData, error: openedError } = await supabase
-                .from('backlog_monitoramento')
+                .from('backlog_monitoramento' as any)
                 .select('data_criacao')
                 .gte('data_criacao', `${startDateStr}T00:00:00`)
                 .lte('data_criacao', `${endDateStr}T23:59:59`);
@@ -54,7 +54,7 @@ export function useFluxoOperacional() {
             const openedByDay: Record<string, number> = {};
             const closedByDay: Record<string, number> = {};
 
-            openedData?.forEach(item => {
+            (openedData as any[])?.forEach((item: any) => {
                 const d = format(parseISO(item.data_criacao), 'yyyy-MM-dd');
                 openedByDay[d] = (openedByDay[d] || 0) + 1;
             });

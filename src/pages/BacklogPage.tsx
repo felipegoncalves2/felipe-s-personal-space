@@ -149,8 +149,10 @@ export function BacklogPage() {
                         <BacklogIntradiarioKPIs
                             inicioDia={intradiaryStats.inicioDia}
                             fimDia={intradiaryStats.fimDia}
+                            backlogAtual={intradiaryStats.backlogAtual}
                             variacao={intradiaryStats.variacao}
                             porcentagemReducao={intradiaryStats.porcentagemReducao}
+                            isAfter18={intradiaryStats.isAfter18}
                         />
                     </div>
 

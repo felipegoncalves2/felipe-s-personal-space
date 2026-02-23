@@ -106,13 +106,17 @@ export function useBacklogData() {
     const [intradiaryStats, setIntradiaryStats] = useState<{
         inicioDia: number | null;
         fimDia: number | null;
+        backlogAtual: number | null;
         variacao: number | null;
         porcentagemReducao: number | null;
+        isAfter18: boolean;
     }>({
         inicioDia: null,
         fimDia: null,
+        backlogAtual: null,
         variacao: null,
-        porcentagemReducao: null
+        porcentagemReducao: null,
+        isAfter18: false
     });
 
     const [historicalIntradiary, setHistoricalIntradiary] = useState<BacklogIntradiarioRecord[]>([]);
@@ -189,18 +193,36 @@ export function useBacklogData() {
                 const todayRecords = typedIntra.filter(r => r.data_snapshot === todayStr);
 
                 const manha = todayRecords.find(r => r.periodo === 'MANHA');
-                const fimDia = todayRecords.find(r => r.periodo === 'FIM_DIA');
+                const fimDiaRecord = todayRecords.find(r => r.periodo === 'FIM_DIA');
 
                 const inicioDoc = manha?.total_backlog ?? null;
-                const fimDoc = fimDia?.total_backlog ?? null;
-                const variacao = (inicioDoc !== null && fimDoc !== null) ? fimDoc - inicioDoc : null;
+                const fimDoc = fimDiaRecord?.total_backlog ?? null;
+
+                // Backlog Atual = total de chamados em aberto agora (rawData count)
+                const backlogAtualValue = (backlogData as any[])?.length ?? null;
+
+                // Determine if after 18:00
+                const currentHour = new Date().getHours();
+                const isAfter18 = currentHour >= 18;
+
+                // Variation logic: before 18h use backlogAtual, after 18h use fimDia
+                let baseVariacao: number | null;
+                if (isAfter18) {
+                    baseVariacao = fimDoc;
+                } else {
+                    baseVariacao = backlogAtualValue;
+                }
+
+                const variacao = (inicioDoc !== null && baseVariacao !== null) ? baseVariacao - inicioDoc : null;
                 const pct = (variacao !== null && inicioDoc && inicioDoc > 0) ? (variacao / inicioDoc) * 100 : null;
 
                 setIntradiaryStats({
                     inicioDia: inicioDoc,
                     fimDia: fimDoc,
+                    backlogAtual: backlogAtualValue,
                     variacao,
-                    porcentagemReducao: pct
+                    porcentagemReducao: pct,
+                    isAfter18
                 });
             } else if (intraError) {
                 console.warn('Intradiary fetch error:', intraError.message);

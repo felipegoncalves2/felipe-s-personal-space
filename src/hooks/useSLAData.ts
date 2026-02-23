@@ -41,7 +41,7 @@ export function useSLAData(type: SLAType) {
 
       if (latestError) console.error('Error fetching latest timestamp:', latestError);
 
-      const dbTimestamp = latestRecord?.created_at || new Date().toISOString();
+      const dbTimestamp = (latestRecord as any)?.created_at || new Date().toISOString();
 
       // 2. Fetch active alerts from DB (Source of Truth for Display)
       const { data: activeAlerts, error: alertsError } = await supabase
