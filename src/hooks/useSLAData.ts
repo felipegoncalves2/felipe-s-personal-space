@@ -21,27 +21,19 @@ export function useSLAData(type: SLAType) {
       setError(null);
 
       const monitorType = type === 'fila' ? 'sla_fila' : 'sla_projeto';
-      const mvName = type === 'fila' ? 'mv_sla_fila_rn' : 'mv_sla_projetos_rn';
+      const tableName = type === 'fila' ? 'resumo_sla_fila_dia' : 'resumo_sla_projeto_dia';
+      const todayStr = new Date().toISOString().split('T')[0];
 
-      // 1. Fetch SLA data from Materialized View
-      const { data: mvData, error: fetchError } = await supabase
-        .from(mvName as any)
-        .select('*');
+      // 1. Fetch SLA data from the new Summary Tables (Current Day)
+      const { data: summaryData, error: fetchError } = await supabase
+        .from(tableName as any)
+        .select('*')
+        .eq('data', todayStr);
 
       if (fetchError) throw fetchError;
 
-      // 1.5 Fetch the latest created_at from the base table to use as the actual data timestamp
-      const baseTableName = type === 'fila' ? 'sla_fila_rn' : 'sla_projetos_rn';
-      const { data: latestRecord, error: latestError } = await supabase
-        .from(baseTableName as any)
-        .select('created_at')
-        .order('created_at', { ascending: false })
-        .limit(1)
-        .maybeSingle();
-
-      if (latestError) console.error('Error fetching latest timestamp:', latestError);
-
-      const dbTimestamp = (latestRecord as any)?.created_at || new Date().toISOString();
+      // 1.5 Get timestamp for last update
+      const dbTimestamp = new Date().toISOString();
 
       // 2. Fetch active alerts from DB (Source of Truth for Display)
       const { data: activeAlerts, error: alertsError } = await supabase
@@ -67,10 +59,10 @@ export function useSLAData(type: SLAType) {
       }
 
       // Transform to SLAData format
-      const processedData: SLAData[] = (mvData || []).map((record: any, index: number) => {
+      const processedData: SLAData[] = (summaryData || []).map((record: any, index: number) => {
         const name = type === 'fila' ? record.fila : record.nome_projeto;
 
-        // MV data is already aggregated and prepared
+        // Data is already aggregated and prepared in summary tables
         const dentro = Number(record.dentro || 0);
         const fora = Number(record.fora || 0);
         const total = Number(record.total || 0);

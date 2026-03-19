@@ -4,8 +4,9 @@ import { Database, CheckCircle, XCircle, Loader2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { toast } from 'sonner';
 
-const SUPABASE_URL = 'https://qromvrzqktrfexbnaoem.supabase.co';
-const PROJECT_ID = 'qromvrzqktrfexbnaoem';
+const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL;
+const PROJECT_ID = import.meta.env.VITE_SUPABASE_PROJECT_ID;
+const ANON_KEY = import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY;
 
 export function SupabaseSettings() {
   const [connectionStatus, setConnectionStatus] = useState<'idle' | 'testing' | 'success' | 'error'>('idle');
@@ -17,7 +18,7 @@ export function SupabaseSettings() {
         method: 'GET',
         headers: {
           'Content-Type': 'application/json',
-          'apikey': 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InFyb212cnpxa3RyZmV4Ym5hb2VtIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Njk3MDU1NTQsImV4cCI6MjA4NTI4MTU1NH0.ipfWhsP7QJSCGBpbILyQyfj2KmRvrvpnB90ISPO7gug',
+          'apikey': ANON_KEY,
         },
       });
 

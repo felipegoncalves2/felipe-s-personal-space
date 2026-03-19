@@ -2,7 +2,7 @@ import React, { createContext, useContext, useState, useEffect, useCallback } fr
 import { User, AuthState, LoginResponse, ValidateSessionResponse } from '@/types';
 import { supabase } from '@/integrations/supabase/client';
 
-const SUPABASE_URL = 'https://qromvrzqktrfexbnaoem.supabase.co';
+const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL;
 const SESSION_KEY = 'techub_session';
 
 interface AuthContextType extends AuthState {
@@ -46,7 +46,10 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     try {
       const response = await fetch(`${SUPABASE_URL}/functions/v1/validate-session`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 
+          'Content-Type': 'application/json',
+          'apikey': import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY
+        },
         body: JSON.stringify({ session_token: token }),
       });
 
@@ -66,7 +69,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         return true;
       }
 
-      // Clear invalid session
+      // Server explicitly rejected the session (valid: false)
       localStorage.removeItem(SESSION_KEY);
       setAuthState({
         user: null,
@@ -77,15 +80,16 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       });
       return false;
     } catch (error) {
-      console.error('Session validation error:', error);
-      localStorage.removeItem(SESSION_KEY);
-      setAuthState({
-        user: null,
-        session_token: null,
-        expires_at: null,
-        isAuthenticated: false,
+      console.error('Session validation error (Network/Server drop):', error);
+      
+      // CRITICAL FIX: Do NOT clear localStorage here! 
+      // If the laptop went to sleep or Wi-Fi dropped, we don't want to log them out permanently.
+      // We just stop the loading state. If they were already authenticated, they remain so.
+      
+      setAuthState(prev => ({
+        ...prev,
         isLoading: false,
-      });
+      }));
       return false;
     }
   }, []);
@@ -122,11 +126,30 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     return () => clearInterval(interval);
   }, [authState.isAuthenticated, authState.session_token, validateSession]);
 
+  useEffect(() => {
+    const handleForceLogout = () => {
+      console.warn("Forced logout triggered by 401 response from an Edge Function.");
+      localStorage.removeItem(SESSION_KEY);
+      setAuthState({
+        user: null,
+        session_token: null,
+        expires_at: null,
+        isAuthenticated: false,
+        isLoading: false,
+      });
+    };
+    window.addEventListener('techub:force_logout', handleForceLogout);
+    return () => window.removeEventListener('techub:force_logout', handleForceLogout);
+  }, []);
+
   const login = async (loginId: string, password: string): Promise<{ success: boolean; error?: string }> => {
     try {
       const response = await fetch(`${SUPABASE_URL}/functions/v1/login`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 
+          'Content-Type': 'application/json',
+          'apikey': import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY
+        },
         body: JSON.stringify({ login: loginId, password }),
       });
 

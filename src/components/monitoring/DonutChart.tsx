@@ -190,7 +190,10 @@ export function DonutChart({
             Base total: <span className="font-medium text-foreground">{totalBase.toLocaleString('pt-BR')}</span>
           </p>
           <p className="text-xs text-muted-foreground">
-            Sem monitoramento: <span className="font-medium text-foreground">{semMonitoramento.toLocaleString('pt-BR')}</span>
+            Monitoradas: <span className="font-medium text-chart-green">{(totalBase - semMonitoramento).toLocaleString('pt-BR')}</span>
+          </p>
+          <p className="text-xs text-muted-foreground">
+            Sem monitoramento: <span className="font-medium text-chart-red">{semMonitoramento.toLocaleString('pt-BR')}</span>
           </p>
         </div>
 

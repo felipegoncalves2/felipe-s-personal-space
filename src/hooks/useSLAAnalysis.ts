@@ -48,198 +48,79 @@ export function useSLAAnalysis(type: 'fila' | 'projetos') {
         setError(null);
         try {
             const now = new Date();
-            const startDateStr = startOfMonth(now).toISOString();
-            const endDateStr = now.toISOString();
+            const startDateStr = startOfMonth(now).toISOString().split('T')[0];
+            const endDateStr = now.toISOString().split('T')[0];
 
-            // 1. Fetch Detailed Data (Paginated)
-            let rawDetailed: any[] = [];
-            let from = 0;
-            const PAGE_SIZE = 1000;
-            let hasMore = true;
+            // 1. Fetch Aggregated KPIs, Causes, and History via RPC (MASSIVE EGRESS REDUCTION)
+            const { data: rawRpcData, error: rpcError } = await (supabase.rpc as any)('get_monthly_sla_kpis', {
+                p_tipo: type,
+                p_start_date: startDateStr,
+                p_end_date: endDateStr
+            });
 
-            while (hasMore) {
-                const { data: pageData, error: pageError } = await supabase
-                    .from('sla_detalhado_rn' as any)
-                    .select('*')
-                    .gte('created_at', startDateStr)
-                    .lte('created_at', endDateStr)
-                    .range(from, from + PAGE_SIZE - 1);
+            if (rpcError) throw rpcError;
 
-                if (pageError) throw pageError;
+            const rpcData: any = rawRpcData;
 
-                if (!pageData || pageData.length === 0) {
-                    hasMore = false;
-                } else {
-                    rawDetailed = [...rawDetailed, ...pageData];
-                    from += PAGE_SIZE;
-                    if (pageData.length < PAGE_SIZE) hasMore = false;
-                }
-            }
-
-            // Filter by type
-            const filteredDetailed = type === 'fila'
-                ? (rawDetailed as any[]).filter(d => d.fila)
-                : (rawDetailed as any[]).filter(d => d.nome_projeto);
-
-            // 2. Fetch History Snapshots
-            const historyTable = type === 'fila' ? 'sla_fila_rn' : 'sla_projetos_rn';
-            const { data: rawHistory, error: historyError } = await supabase
-                .from(historyTable as any)
-                .select('*')
-                .gte('created_at', startDateStr)
-                .lte('created_at', endDateStr)
-                .order('created_at', { ascending: true });
-
-            if (historyError) throw historyError;
-
-            // 3. Fetch Alerts
+            // 2. Fetch Alerts (For anomalies)
             const alertType: any = type === 'fila' ? 'sla_fila' : 'sla_projeto';
             const { data: rawAlerts, error: alertsError } = await supabase
                 .from('monitoring_alerts')
                 .select('*')
                 .eq('tipo_monitoramento', alertType)
-                .gte('detected_at', startDateStr);
+                .gte('detected_at', startOfMonth(now).toISOString());
 
             if (alertsError) throw alertsError;
 
-            // --- KPIs ---
-            const totalTickets = filteredDetailed.length;
-            const lostTickets = filteredDetailed.filter((d: any) => d.sla_perdido === 'Sim').length;
-            const slaPercentage = totalTickets > 0 ? ((totalTickets - lostTickets) / totalTickets) * 100 : 0;
-            const totalAlerts = rawAlerts?.length || 0;
-            const anomaliesCount = (rawAlerts as any[])?.filter(a => a.alert_type === 'anomalia').length || 0;
-
-            const itemCounts: Record<string, number> = {};
-            filteredDetailed.forEach((d: any) => {
-                if (d.sla_perdido === 'Sim') {
-                    const id = type === 'fila' ? d.fila : d.nome_projeto;
-                    if (id) {
-                        itemCounts[id] = (itemCounts[id] || 0) + 1;
-                    }
-                }
-            });
-            const topEntry = Object.entries(itemCounts)
-                .sort(([, a], [, b]) => b - a)[0];
-
-            const topCriticalItem = topEntry?.[0] || '---';
-            const topCriticalCount = topEntry?.[1] || 0;
-
-            setKpis({
-                totalTickets,
-                slaPercentage,
-                outsideSLA: lostTickets,
-                totalAlerts,
-                anomalies: anomaliesCount,
-                topCriticalItem,
-                topCriticalCount
-            });
-
-            // --- DAILY RANGE AGGREGATION (CUMULATIVE MONTH-TO-DATE) ---
-            // Instead of RPC snapshots, we calculate cumulative SLA for each day of the month
-            const daysInMonth: Date[] = [];
-            let currentDay = startOfDay(new Date(startDateStr));
-            const today = startOfDay(new Date());
-
-            while (currentDay <= today) {
-                daysInMonth.push(new Date(currentDay));
-                currentDay.setDate(currentDay.getDate() + 1);
-            }
-
-            const historyPoints: HistoricalPoint[] = daysInMonth.map(day => {
-                const dayEnd = new Date(day);
-                dayEnd.setHours(23, 59, 59, 999);
-
-                // Cumulative tickets: all tickets created on or before this day (within the month)
-                const cumulativeTickets = filteredDetailed.filter((d: any) => {
-                    const ticketDate = new Date(d.created_at);
-                    return ticketDate <= dayEnd;
-                });
-
-                const total = cumulativeTickets.length;
-                const lost = cumulativeTickets.filter((d: any) => d.sla_perdido === 'Sim').length;
-                const percent = total > 0 ? Number(((total - lost) / total * 100).toFixed(2)) : 100;
-
-                // Alerts for this specific day (for anomalies/markers)
-                const alertDay = (rawAlerts as any[] || []).filter(a => {
-                    const ad = new Date(a.detected_at);
-                    return ad >= day && ad <= dayEnd;
-                });
-
+            // Apply alerts & anomalies to the RPC history data
+            const historyPoints: HistoricalPoint[] = (rpcData.history || []).map((h: any) => {
+                const dayStr = h.timestamp.split('T')[0];
+                const dayAlerts = (rawAlerts || []).filter(a => a.detected_at.startsWith(dayStr));
                 return {
-                    timestamp: day.toISOString(),
-                    min: percent, // Showing single line, so min=max=avg
-                    max: percent,
-                    avg: percent,
-                    hasAnomaly: alertDay.some(a => a.alert_type === 'anomalia'),
-                    alerts: alertDay
+                    timestamp: h.timestamp,
+                    min: h.min,
+                    max: h.max,
+                    avg: h.avg,
+                    hasAnomaly: dayAlerts.some(a => a.alert_type === 'anomalia'),
+                    alerts: dayAlerts
                 };
             });
 
+            // Set Aggregated State
+            setKpis({
+                totalTickets: rpcData.kpis.totalTickets,
+                slaPercentage: rpcData.kpis.slaPercentage,
+                outsideSLA: rpcData.kpis.lostTickets,
+                totalAlerts: rawAlerts?.length || 0,
+                anomalies: (rawAlerts || []).filter(a => a.alert_type === 'anomalia').length,
+                topCriticalItem: rpcData.kpis.topCriticalItem,
+                topCriticalCount: rpcData.kpis.topCriticalCount
+            });
+
             setHistory(historyPoints);
+            setCauses(rpcData.causes);
 
-            // --- CAUSES MAPPING ---
-            const getCounts = (field: string, onlyLostSLA: boolean = true) => {
-                const counts: Record<string, number> = {};
-                filteredDetailed.forEach((d: any) => {
-                    if (!onlyLostSLA || d.sla_perdido === 'Sim') {
-                        const val = d[field] || 'Não informado';
-                        counts[val] = (counts[val] || 0) + 1;
-                    }
-                });
-                return Object.entries(counts)
-                    .map(([name, value]) => ({ name, value }))
-                    .sort((a, b) => b.value - a.value);
-            };
+            // 3. Fetch Detailed Data (Paginated - max 200 items to save egress)
+            // Users should use server-side search if they need more, but recent 200 is usually enough for visual check
+            let query = supabase
+                .from('sla_detalhado_rn' as any)
+                .select('*')
+                .gte('data_criacao', startOfMonth(now).toISOString())
+                .lte('data_criacao', now.toISOString())
+                .order('data_criacao', { ascending: false })
+                .limit(200);
 
-            // SLA by UF Calculation
-            const ufStats: Record<string, { total: number, lost: number }> = {};
-            filteredDetailed.forEach((d: any) => {
-                const uf = d.uf || 'Ignorado';
-                if (!ufStats[uf]) ufStats[uf] = { total: 0, lost: 0 };
-                ufStats[uf].total += 1;
-                if (d.sla_perdido === 'Sim') ufStats[uf].lost += 1;
-            });
+            if (type === 'fila') {
+                query = query.not('fila', 'is', null).neq('fila', '');
+            } else {
+                query = query.not('nome_projeto', 'is', null).neq('nome_projeto', '');
+            }
 
-            const slaPorUf = Object.entries(ufStats).map(([name, stats]) => ({
-                name,
-                value: parseFloat((((stats.total - stats.lost) / stats.total) * 100).toFixed(2)),
-                total: stats.total,
-                lost: stats.lost
-            })).sort((a, b) => a.value - b.value);
+            const { data: detailedData, error: detailedError } = await query;
 
-            setCauses({
-                motivos: getCounts('motivo_perda_sla').slice(0, 10),
-                categorias: getCounts('categoria_perda_sla'),
-                incidentes: getCounts('tipo_incidente', false),
-                divisoes: getCounts('divisao_perda_sla'),
-                slaPorUf
-            });
+            if (detailedError) throw detailedError;
 
-            setDetailedData(filteredDetailed);
-
-            const filterData = (search: string, project?: string, fila?: string) => {
-                let result = [...filteredDetailed];
-
-                if (search) {
-                    const lowSearch = search.toLowerCase();
-                    result = result.filter(d =>
-                        (d.numero_referencia?.toLowerCase().includes(lowSearch)) ||
-                        (d.observacao_perda_sla?.toLowerCase().includes(lowSearch)) ||
-                        (d.nome_projeto?.toLowerCase().includes(lowSearch)) ||
-                        (d.fila?.toLowerCase().includes(lowSearch))
-                    );
-                }
-
-                if (project && project !== 'all') {
-                    result = result.filter(d => d.nome_projeto === project);
-                }
-
-                if (fila && fila !== 'all') {
-                    result = result.filter(d => d.fila === fila);
-                }
-
-                return result;
-            };
+            setDetailedData(detailedData || []);
 
         } catch (err: any) {
             console.error('Error fetching SLA analysis:', err);

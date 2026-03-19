@@ -1,7 +1,7 @@
 import { useState, useCallback } from 'react';
 import { UserListItem, Pagination } from '@/types';
 
-const SUPABASE_URL = 'https://qromvrzqktrfexbnaoem.supabase.co';
+const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL;
 const SESSION_KEY = 'techub_session';
 
 export function useUsers() {
@@ -45,7 +45,8 @@ export function useUsers() {
         method: 'GET',
         headers: {
           'Content-Type': 'application/json',
-          Authorization: `Bearer ${sessionToken}`,
+          'apikey': import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY,
+          'Authorization': `Bearer ${sessionToken}`,
         },
       });
 

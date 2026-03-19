@@ -27,7 +27,7 @@ export function SLAEvolutionChart({ data, onPointClick, selectedPoint }: SLAEvol
             return (
                 <div className="glass p-4 border border-white/10 rounded-lg shadow-2xl animate-in fade-in zoom-in duration-200">
                     <p className="text-[11px] font-bold text-slate-400 mb-3 uppercase tracking-widest border-b border-white/5 pb-2">
-                        Dia: {format(new Date(point.timestamp), 'dd/MM')}
+                        Dia: {point.timestamp ? format(new Date(point.timestamp), 'dd/MM') : '--'}
                     </p>
                     <div className="space-y-2">
                         <div className="flex items-center justify-between gap-8">
@@ -104,7 +104,11 @@ export function SLAEvolutionChart({ data, onPointClick, selectedPoint }: SLAEvol
                         <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="rgba(255,255,255,0.03)" />
                         <XAxis
                             dataKey="timestamp"
-                            tickFormatter={(value) => format(new Date(value), 'dd')}
+                            tickFormatter={(value) => {
+                              if (!value) return '';
+                              const d = new Date(value);
+                              return isNaN(d.getTime()) ? String(value) : format(d, 'dd/MM');
+                            }}
                             stroke="rgba(255,255,255,0.3)"
                             fontSize={11}
                             axisLine={false}

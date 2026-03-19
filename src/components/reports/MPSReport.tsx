@@ -79,9 +79,9 @@ export function MPSReport() {
     }, [rawData]);
 
     const exportCSV = () => {
-        const headers = 'Empresa,Total Base,Sem Monitoramento,Percentual,Data\n';
+        const headers = 'Empresa,Total Base,Total Monitorado,Sem Monitoramento,Percentual,Data\n';
         const rows = filteredData.map(item =>
-            `${item.empresa},${item.total_base},${item.total_sem_monitoramento},${item.percentual}%,${format(new Date(item.data_gravacao), 'dd/MM/yyyy HH:mm')}`
+            `${item.empresa},${item.total_base},${item.total_base - item.total_sem_monitoramento},${item.total_sem_monitoramento},${item.percentual}%,${format(new Date(item.data_gravacao), 'dd/MM/yyyy HH:mm')}`
         ).join('\n');
 
         const blob = new Blob([headers + rows], { type: 'text/csv;charset=utf-8;' });
@@ -95,6 +95,7 @@ export function MPSReport() {
         const ws = XLSX.utils.json_to_sheet(filteredData.map(item => ({
             'Empresa': item.empresa,
             'Total Base': item.total_base,
+            'Total Monitorado': item.total_base - item.total_sem_monitoramento,
             'Sem Monitoramento': item.total_sem_monitoramento,
             'Percentual %': item.percentual,
             'Data': format(new Date(item.data_gravacao), 'dd/MM/yyyy HH:mm')
@@ -228,6 +229,7 @@ export function MPSReport() {
                                 <TableRow>
                                     <TableHead>Empresa</TableHead>
                                     <TableHead>Base Total</TableHead>
+                                    <TableHead>Total Monitorado</TableHead>
                                     <TableHead>Sem Monitoramento</TableHead>
                                     <TableHead>Percentual</TableHead>
                                     <TableHead>Data Leitura</TableHead>
@@ -238,7 +240,8 @@ export function MPSReport() {
                                     <TableRow key={`${item.empresa}-${idx}`}>
                                         <TableCell className="font-medium">{item.empresa}</TableCell>
                                         <TableCell>{item.total_base}</TableCell>
-                                        <TableCell>{item.total_sem_monitoramento}</TableCell>
+                                        <TableCell className="text-chart-green">{item.total_base - item.total_sem_monitoramento}</TableCell>
+                                        <TableCell className="text-chart-red">{item.total_sem_monitoramento}</TableCell>
                                         <TableCell>
                                             <span className={`font-bold ${item.percentual >= 93 ? 'text-chart-green' :
                                                 item.percentual >= 80 ? 'text-chart-yellow' : 'text-chart-red'

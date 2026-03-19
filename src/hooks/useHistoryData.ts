@@ -66,46 +66,69 @@ async function fetchMPSHistory(identifier: string, granularity: Granularity): Pr
     const daysToSubtract = granularity === 'hourly' ? 5 : 15;
     const startDate = subDays(endDate, daysToSubtract);
 
-    const { data, error } = await supabase
-        .from('monitoramento_parque')
-        .select('data_gravacao, total_base, total_sem_monitoramento')
-        .eq('empresa', identifier)
-        .gte('data_gravacao', startDate.toISOString())
-        .order('data_gravacao', { ascending: true });
+    if (granularity === 'daily') {
+        // Use optimized daily summary table
+        const { data, error } = await (supabase as any)
+            .from('resumo_mps_dia')
+            .select('data, total_base, total_sem_comunicacao, percentual')
+            .eq('empresa', identifier)
+            .gte('data', startDate.toISOString().split('T')[0])
+            .order('data', { ascending: true });
 
-    if (error) throw error;
-    if (!data || data.length === 0) return [];
+        if (error) throw error;
+        if (!data || data.length === 0) return [];
 
-    // Aggregate by period
-    const aggregated = new Map<string, { total_base: number, total_sem_monitoramento: number, date: string, fullDate: string }>();
+        return data.map(item => {
+            const dateObj = new Date(item.data);
+            return {
+                date: format(dateObj, 'dd/MM'),
+                fullDate: item.data,
+                total_base: item.total_base,
+                total_sem_monitoramento: item.total_sem_comunicacao,
+                percentual: Number(item.percentual)
+            };
+        });
+    } else {
+        // Use RAW table for hourly (small timeframe, so egress is fine)
+        const { data, error } = await supabase
+            .from('monitoramento_parque')
+            .select('data_gravacao, total_base, total_sem_monitoramento')
+            .eq('empresa', identifier)
+            .gte('data_gravacao', startDate.toISOString())
+            .order('data_gravacao', { ascending: true });
 
-    data.forEach(item => {
-        const dateObj = new Date(item.data_gravacao);
-        const key = granularity === 'daily'
-            ? format(dateObj, 'yyyy-MM-dd')
-            : format(dateObj, 'yyyy-MM-dd HH');
+        if (error) throw error;
+        if (!data || data.length === 0) return [];
 
-        const current = aggregated.get(key) || {
-            total_base: 0,
-            total_sem_monitoramento: 0,
-            date: granularity === 'daily' ? format(dateObj, 'dd/MM') : format(dateObj, 'dd/MM HH') + 'h',
-            fullDate: item.data_gravacao
-        };
+        // Aggregate by period
+        const aggregated = new Map<string, { total_base: number, total_sem_monitoramento: number, date: string, fullDate: string }>();
 
-        current.total_base += (parseInt(item.total_base as string) || 0);
-        current.total_sem_monitoramento += (parseInt(item.total_sem_monitoramento as string) || 0);
-        aggregated.set(key, current);
-    });
+        data.forEach(item => {
+            const dateObj = new Date(item.data_gravacao);
+            const key = format(dateObj, 'yyyy-MM-dd HH');
 
-    const result = Array.from(aggregated.values()).map(item => ({
-        date: item.date,
-        fullDate: item.fullDate,
-        total_base: item.total_base,
-        total_sem_monitoramento: item.total_sem_monitoramento,
-        percentual: item.total_base > 0
-            ? parseFloat((((item.total_base - item.total_sem_monitoramento) / item.total_base) * 100).toFixed(2))
-            : 100
-    }));
+            const current = aggregated.get(key) || {
+                total_base: 0,
+                total_sem_monitoramento: 0,
+                date: format(dateObj, 'dd/MM HH') + 'h',
+                fullDate: item.data_gravacao
+            };
 
-    return result;
+            current.total_base += (parseInt(item.total_base as string) || 0);
+            current.total_sem_monitoramento += (parseInt(item.total_sem_monitoramento as string) || 0);
+            aggregated.set(key, current);
+        });
+
+        const result = Array.from(aggregated.values()).map(item => ({
+            date: item.date,
+            fullDate: item.fullDate,
+            total_base: item.total_base,
+            total_sem_monitoramento: item.total_sem_monitoramento,
+            percentual: item.total_base > 0
+                ? parseFloat((((item.total_base - item.total_sem_monitoramento) / item.total_base) * 100).toFixed(2))
+                : 100
+        }));
+
+        return result;
+    }
 }

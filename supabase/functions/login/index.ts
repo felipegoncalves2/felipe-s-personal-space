@@ -51,8 +51,9 @@ Deno.serve(async (req) => {
 
   try {
     const { login, password } = await req.json();
-
+    console.log("Receiving login request for:", login);
     if (!login || !password) {
+      console.log("Missing login or password");
       return new Response(
         JSON.stringify({ error: 'Login e senha são obrigatórios' }),
         { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
@@ -86,7 +87,14 @@ Deno.serve(async (req) => {
     if (userError || !user) {
       console.log("User not found:", userError);
       return new Response(
-        JSON.stringify({ error: 'Credenciais inválidas' }),
+        JSON.stringify({ 
+          error: 'Credenciais inválidas', 
+          debug: { 
+            found: !!user, 
+            error: userError,
+            login_attempted: login
+          } 
+        }),
         { status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
     }
@@ -100,7 +108,9 @@ Deno.serve(async (req) => {
     }
 
     // Verify password
+    console.log("Found user, verifying password...");
     const isValidPassword = await verifyPassword(password, user.password_hash);
+    console.log("Password valid:", isValidPassword);
 
     if (!isValidPassword) {
       console.log("Invalid password for user:", user.username);

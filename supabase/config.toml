@@ -1,4 +1,4 @@
-project_id = "qromvrzqktrfexbnaoem"
+project_id = "mihwdebeulkfugrxerfo"
 
 [functions.get-monitoring-data]
 verify_jwt = false

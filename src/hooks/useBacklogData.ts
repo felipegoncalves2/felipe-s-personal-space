@@ -104,19 +104,19 @@ export function useBacklogData() {
     const [filters, setFilters] = useState<BacklogFilters>(DEFAULT_FILTERS);
 
     const [intradiaryStats, setIntradiaryStats] = useState<{
-        inicioDia: number | null;
-        fimDia: number | null;
-        backlogAtual: number | null;
-        variacao: number | null;
-        porcentagemReducao: number | null;
-        isAfter18: boolean;
+        currentBacklog: number | null;
+        todayStart: number | null;
+        todayVariation: number | null;
+        yesterdayStart: number | null;
+        yesterdayEnd: number | null;
+        yesterdayVariation: number | null;
     }>({
-        inicioDia: null,
-        fimDia: null,
-        backlogAtual: null,
-        variacao: null,
-        porcentagemReducao: null,
-        isAfter18: false
+        currentBacklog: null,
+        todayStart: null,
+        todayVariation: null,
+        yesterdayStart: null,
+        yesterdayEnd: null,
+        yesterdayVariation: null,
     });
 
     const [historicalIntradiary, setHistoricalIntradiary] = useState<BacklogIntradiarioRecord[]>([]);
@@ -179,53 +179,29 @@ export function useBacklogData() {
                 setYesterdayCount((yesterdayData as any).total_backlog ?? null);
             }
 
-            // 4. Fetch intradiary data (Today + History for chart)
-            const { data: intradiaryData, error: intraError } = await supabase
-                .from('backlog_inicio_fim_dia' as any)
-                .select('*')
-                .order('data_snapshot', { ascending: true });
+            // 4. Fetch intradiary data via optimized RPC
+            const { data: summaryData, error: summaryError } = await (supabase as any).rpc('get_backlog_summary');
 
-            if (!intraError && intradiaryData) {
-                const typedIntra = intradiaryData as unknown as BacklogIntradiarioRecord[];
-                setHistoricalIntradiary(typedIntra);
-
-                const todayStr = format(new Date(), 'yyyy-MM-dd');
-                const todayRecords = typedIntra.filter(r => r.data_snapshot === todayStr);
-
-                const manha = todayRecords.find(r => r.periodo === 'MANHA');
-                const fimDiaRecord = todayRecords.find(r => r.periodo === 'FIM_DIA');
-
-                const inicioDoc = manha?.total_backlog ?? null;
-                const fimDoc = fimDiaRecord?.total_backlog ?? null;
-
-                // Backlog Atual = total de chamados em aberto agora (rawData count)
-                const backlogAtualValue = (backlogData as any[])?.length ?? null;
-
-                // Determine if after 18:00
-                const currentHour = new Date().getHours();
-                const isAfter18 = currentHour >= 18;
-
-                // Variation logic: before 18h use backlogAtual, after 18h use fimDia
-                let baseVariacao: number | null;
-                if (isAfter18) {
-                    baseVariacao = fimDoc;
-                } else {
-                    baseVariacao = backlogAtualValue;
-                }
-
-                const variacao = (inicioDoc !== null && baseVariacao !== null) ? baseVariacao - inicioDoc : null;
-                const pct = (variacao !== null && inicioDoc && inicioDoc > 0) ? (variacao / inicioDoc) * 100 : null;
-
+            if (!summaryError && summaryData) {
+                // Return exactly the 6 metrics requested
                 setIntradiaryStats({
-                    inicioDia: inicioDoc,
-                    fimDia: fimDoc,
-                    backlogAtual: backlogAtualValue,
-                    variacao,
-                    porcentagemReducao: pct,
-                    isAfter18
-                });
-            } else if (intraError) {
-                console.warn('Intradiary fetch error:', intraError.message);
+                    currentBacklog: summaryData.current_backlog,
+                    todayStart: summaryData.today_start,
+                    todayVariation: summaryData.today_variation,
+                    yesterdayStart: summaryData.yesterday_start,
+                    yesterdayEnd: summaryData.yesterday_end,
+                    yesterdayVariation: summaryData.yesterday_variation,
+                } as any);
+            } else if (summaryError) {
+                console.warn('Intradiary fetch error:', summaryError.message);
+                setIntradiaryStats({
+                    currentBacklog: null,
+                    todayStart: null,
+                    todayVariation: null,
+                    yesterdayStart: null,
+                    yesterdayEnd: null,
+                    yesterdayVariation: null,
+                } as any);
             }
 
             setLastUpdated(new Date());

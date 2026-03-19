@@ -27,61 +27,27 @@ export function useReportData() {
         setLoading(true);
         setError(null);
         try {
-            const startDateStr = startDate.toISOString();
-            const endDateStr = endDate.toISOString();
-            const PAGE_SIZE = 1000;
+            const startDateStr = format(startDate, 'yyyy-MM-dd');
+            const endDateStr = format(endDate, 'yyyy-MM-dd');
 
-            // 1. Get total count first to parallelize
-            const { count, error: countError } = await supabase
-                .from('monitoramento_parque')
-                .select('id', { count: 'exact', head: true })
-                .gte('data_gravacao', startDateStr)
-                .lte('data_gravacao', endDateStr);
+            const { data, error } = await supabase
+                .from('resumo_mps_dia')
+                .select('*')
+                .gte('data', startDateStr)
+                .lte('data', endDateStr)
+                .order('data', { ascending: true });
 
-            if (countError) throw countError;
-            const totalRecords = count || 0;
+            if (error) throw error;
 
-            if (totalRecords === 0) return [];
+            if (!data || data.length === 0) return [];
 
-            // 2. Prepare parallel requests
-            const numPages = Math.ceil(totalRecords / PAGE_SIZE);
-            const pagePromises = Array.from({ length: numPages }).map((_, i) => {
-                const from = i * PAGE_SIZE;
-                const to = from + PAGE_SIZE - 1;
-                return supabase
-                    .from('monitoramento_parque')
-                    .select('data_gravacao, empresa, total_base, total_sem_monitoramento')
-                    .gte('data_gravacao', startDateStr)
-                    .lte('data_gravacao', endDateStr)
-                    .order('data_gravacao', { ascending: true })
-                    .range(from, to);
-            });
-
-            // 3. Execute all in parallel
-            const results = await Promise.all(pagePromises);
-
-            // Check for errors in any page
-            for (const res of results) {
-                if (res.error) throw res.error;
-            }
-
-            const allData = results.flatMap(res => res.data || []);
-
-            const formattedData: MPSReportData[] = allData.map((item: any) => {
-                const totalBase = Number(item.total_base);
-                const totalSem = Number(item.total_sem_monitoramento);
-                const percentual = totalBase > 0
-                    ? parseFloat((((totalBase - totalSem) / totalBase) * 100).toFixed(2))
-                    : 100;
-
-                return {
-                    empresa: item.empresa,
-                    total_base: totalBase,
-                    total_sem_monitoramento: totalSem,
-                    data_gravacao: item.data_gravacao,
-                    percentual: percentual
-                };
-            });
+            const formattedData: MPSReportData[] = data.map((item: any) => ({
+                empresa: item.empresa,
+                total_base: Number(item.total_base),
+                total_sem_monitoramento: Number(item.total_sem_comunicacao),
+                data_gravacao: item.data,
+                percentual: Number(item.percentual)
+            }));
 
             return formattedData;
         } catch (err: any) {
@@ -96,68 +62,37 @@ export function useReportData() {
         setLoading(true);
         setError(null);
         try {
-            // Query sla_detalhado_rn and aggregate to simulate snapshots (Paginated)
-            let data: any[] = [];
-            let from = 0;
-            const PAGE_SIZE = 1000;
-            let hasMore = true;
+            const startDateStr = format(startDate, 'yyyy-MM-dd');
+            const endDateStr = format(endDate, 'yyyy-MM-dd');
+            const tableName = type === 'fila' ? 'resumo_sla_fila_dia' : 'resumo_sla_projeto_dia';
 
-            while (hasMore) {
-                const { data: pageData, error: pageError } = await supabase
-                    .from('sla_detalhado_rn' as any)
-                    .select('*')
-                    .gte('created_at', startDate.toISOString())
-                    .lte('created_at', endDate.toISOString())
-                    .range(from, from + PAGE_SIZE - 1);
+            const { data, error } = await supabase
+                .from(tableName as any)
+                .select('*')
+                .gte('data', startDateStr)
+                .lte('data', endDateStr)
+                .order('data', { ascending: true });
 
-                if (pageError) throw pageError;
+            if (error) throw error;
 
-                if (!pageData || pageData.length === 0) {
-                    hasMore = false;
-                } else {
-                    data = [...data, ...pageData];
-                    from += PAGE_SIZE;
-                    if (pageData.length < PAGE_SIZE) hasMore = false;
+            if (!data || data.length === 0) return [];
+
+            const formattedData: SLAReportData[] = data.map((item: any) => ({
+                nome: type === 'fila' ? item.fila : item.nome_projeto,
+                dentro: Number(item.dentro),
+                fora: Number(item.fora),
+                total: Number(item.total),
+                percentual: Number(item.percentual),
+                created_at: item.data // Mapping date field to created_at for historical consistency in visualizer
+            }));
+
+            // Sort by Date DESC and Name ASC
+            formattedData.sort((a, b) => {
+                if (a.created_at !== b.created_at) {
+                    return new Date(b.created_at).getTime() - new Date(a.created_at).getTime();
                 }
-            }
-
-            // Group by day and item name
-            const grouped = new Map<string, { dentro: number; fora: number; name: string; date: string }>();
-
-            (data || []).forEach((item: any) => {
-                const name = type === 'fila' ? item.fila : item.nome_projeto;
-                if (!name) return;
-
-                const dayKey = format(new Date(item.created_at), 'yyyy-MM-dd');
-                const groupKey = `${dayKey}_${name}`;
-
-                const existing = grouped.get(groupKey) || {
-                    dentro: 0,
-                    fora: 0,
-                    name: name,
-                    date: dayKey
-                };
-
-                if (item.sla_perdido === 'Sim') {
-                    existing.fora += 1;
-                } else {
-                    existing.dentro += 1;
-                }
-
-                grouped.set(groupKey, existing);
+                return a.nome.localeCompare(b.nome);
             });
-
-            const formattedData: SLAReportData[] = Array.from(grouped.values()).map(item => {
-                const total = item.dentro + item.fora;
-                return {
-                    nome: item.name,
-                    dentro: item.dentro,
-                    fora: item.fora,
-                    total: total,
-                    percentual: total > 0 ? parseFloat(((item.dentro / total) * 100).toFixed(2)) : 100,
-                    created_at: new Date(item.date).toISOString()
-                };
-            }).sort((a, b) => new Date(a.created_at).getTime() - new Date(b.created_at).getTime());
 
             return formattedData;
         } catch (err: any) {

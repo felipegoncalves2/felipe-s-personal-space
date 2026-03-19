@@ -6,7 +6,7 @@ import { detectAnomaly, calculateComparison, DataPoint } from '@/lib/statistics'
 import { subDays } from 'date-fns';
 import { persistAlert } from '@/lib/alerts';
 
-const SUPABASE_URL = 'https://qromvrzqktrfexbnaoem.supabase.co';
+const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL;
 const SESSION_KEY = 'techub_session';
 const REFRESH_INTERVAL = 5 * 60 * 1000; // 5 minutes
 
@@ -37,23 +37,29 @@ export function useMonitoringData() {
         method: 'GET',
         headers: {
           'Content-Type': 'application/json',
+          'apikey': import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY,
           ...(sessionToken ? { Authorization: `Bearer ${sessionToken}` } : {}),
         },
       });
 
       const result = await response.json();
 
-      if (!result.success) {
+      if (!response.ok || !result.success) {
+        if (response.status === 401 || result.error === 'Sessão inválida') {
+           // We need to trigger a full logout event here 
+           // by dispatching a custom event that AuthContext can listen to, or passing a callback
+           window.dispatchEvent(new Event('techub:force_logout'));
+        }
         throw new Error(result.error || 'Erro ao carregar dados');
       }
 
       // 2. Fetch history for stats calculation (last 7 days)
-      const startDate = subDays(new Date(), 8).toISOString();
+      const startDate = subDays(new Date(), 8).toISOString().split('T')[0];
       const { data: rawHistory, error: dbError } = await supabase
-        .from('monitoramento_parque')
+        .from('resumo_mps_dia')
         .select('*')
-        .gte('data_gravacao', startDate)
-        .order('data_gravacao', { ascending: false });
+        .gte('data', startDate)
+        .order('data', { ascending: false });
 
       if (dbError) throw dbError;
 
@@ -94,16 +100,16 @@ export function useMonitoringData() {
         // Map history to DataPoints
         const historyPoints: DataPoint[] = records.map(r => {
           const b = parseInt(r.total_base) || 0;
-          const s = parseInt(r.total_sem_monitoramento) || 0;
+          const s = parseInt(r.total_sem_comunicacao) || 0;
           return {
-            date: r.data_gravacao,
-            value: b > 0 ? ((b - s) / b) * 100 : 0
+            date: r.data,
+            value: Number(r.percentual) || (b > 0 ? ((b - s) / b) * 100 : 0)
           };
         });
 
         // Current value
         const currentBase = parseInt(records[0]?.total_base) || item.total_base || 0;
-        const currentSem = parseInt(records[0]?.total_sem_monitoramento) || item.total_sem_monitoramento || 0;
+        const currentSem = parseInt(records[0]?.total_sem_comunicacao) || item.total_sem_monitoramento || 0;
         const currentPercentual = currentBase > 0 ? ((currentBase - currentSem) / currentBase) * 100 : item.percentual;
 
         // Previous value for variation calculation
@@ -111,7 +117,7 @@ export function useMonitoringData() {
         let previousPercentual = null;
         if (prevRecord) {
           const prevBase = parseInt(prevRecord.total_base) || 0;
-          const prevSem = parseInt(prevRecord.total_sem_monitoramento) || 0;
+          const prevSem = parseInt(prevRecord.total_sem_comunicacao) || 0;
           previousPercentual = prevBase > 0 ? ((prevBase - prevSem) / prevBase) * 100 : 0;
         }
 

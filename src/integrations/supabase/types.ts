@@ -1,4 +1,4 @@
-export type Json =
+﻿export type Json =
   | string
   | number
   | boolean
@@ -10,7 +10,7 @@ export type Database = {
   // Allows to automatically instantiate createClient with right options
   // instead of createClient<Database, { PostgrestVersion: 'XX' }>(URL, KEY)
   __InternalSupabase: {
-    PostgrestVersion: "14.1"
+    PostgrestVersion: "14.4"
   }
   public: {
     Tables: {
@@ -216,23 +216,23 @@ export type Database = {
         Row: {
           data_gravacao: string
           empresa: string
-          id: string
-          total_base: string
-          total_sem_monitoramento: string
+          id: number
+          total_base: number
+          total_sem_monitoramento: number
         }
         Insert: {
           data_gravacao?: string
           empresa: string
-          id?: string
-          total_base: string
-          total_sem_monitoramento: string
+          id: number
+          total_base: number
+          total_sem_monitoramento: number
         }
         Update: {
           data_gravacao?: string
           empresa?: string
-          id?: string
-          total_base?: string
-          total_sem_monitoramento?: string
+          id?: number
+          total_base?: number
+          total_sem_monitoramento?: number
         }
         Relationships: []
       }
@@ -243,7 +243,7 @@ export type Database = {
           anomaly_stddev_multiplier: number
           auto_resolve_consecutive_readings: number
           auto_resolve_enabled: boolean
-          created_at: string
+          created_at: string | null
           id: string
           tipo_monitoramento: string
           trend_consecutive_periods: number
@@ -251,17 +251,17 @@ export type Database = {
           updated_at: string
         }
         Insert: {
-          anomaly_enabled?: boolean
-          anomaly_moving_avg_days?: number
-          anomaly_stddev_multiplier?: number
-          auto_resolve_consecutive_readings?: number
-          auto_resolve_enabled?: boolean
-          created_at?: string
+          anomaly_enabled: boolean
+          anomaly_moving_avg_days: number
+          anomaly_stddev_multiplier: number
+          auto_resolve_consecutive_readings: number
+          auto_resolve_enabled: boolean
+          created_at?: string | null
           id?: string
           tipo_monitoramento: string
-          trend_consecutive_periods?: number
-          trend_enabled?: boolean
-          updated_at?: string
+          trend_consecutive_periods: number
+          trend_enabled: boolean
+          updated_at: string
         }
         Update: {
           anomaly_enabled?: boolean
@@ -269,7 +269,7 @@ export type Database = {
           anomaly_stddev_multiplier?: number
           auto_resolve_consecutive_readings?: number
           auto_resolve_enabled?: boolean
-          created_at?: string
+          created_at?: string | null
           id?: string
           tipo_monitoramento?: string
           trend_consecutive_periods?: number
@@ -283,7 +283,7 @@ export type Database = {
           alert_type: string
           comentario_tratamento: string | null
           contexto: Json | null
-          created_at: string
+          created_at: string | null
           detected_at: string
           id: string
           identificador_item: string
@@ -298,14 +298,14 @@ export type Database = {
           alert_type: string
           comentario_tratamento?: string | null
           contexto?: Json | null
-          created_at?: string
-          detected_at?: string
+          created_at?: string | null
+          detected_at: string
           id?: string
           identificador_item: string
           percentual_atual: number
           severity: string
           tipo_monitoramento: string
-          tratado?: boolean
+          tratado: boolean
           tratado_em?: string | null
           tratado_por?: number | null
         }
@@ -313,7 +313,7 @@ export type Database = {
           alert_type?: string
           comentario_tratamento?: string | null
           contexto?: Json | null
-          created_at?: string
+          created_at?: string | null
           detected_at?: string
           id?: string
           identificador_item?: string
@@ -358,7 +358,7 @@ export type Database = {
       presentation_settings: {
         Row: {
           companies_per_page: number
-          created_at: string
+          created_at: string | null
           id: string
           ignore_green: boolean
           ignore_red: boolean
@@ -378,8 +378,29 @@ export type Database = {
           updated_at: string
         }
         Insert: {
+          companies_per_page: number
+          created_at?: string | null
+          id?: string
+          ignore_green: boolean
+          ignore_red: boolean
+          ignore_yellow: boolean
+          interval_seconds: number
+          max_percentage?: number | null
+          min_percentage?: number | null
+          monitoring_type?: string
+          theme_danger?: string | null
+          theme_success?: string | null
+          theme_warning?: string | null
+          threshold_atencao?: number | null
+          threshold_attention?: number | null
+          threshold_critical?: number | null
+          threshold_excelente?: number | null
+          threshold_excellent?: number | null
+          updated_at?: string
+        }
+        Update: {
           companies_per_page?: number
-          created_at?: string
+          created_at?: string | null
           id?: string
           ignore_green?: boolean
           ignore_red?: boolean
@@ -398,26 +419,116 @@ export type Database = {
           threshold_excellent?: number | null
           updated_at?: string
         }
+        Relationships: []
+      }
+      resumo_backlog_dia: {
+        Row: {
+          created_at: string | null
+          data: string
+          total_abertos: number
+          total_atrasados: number
+          total_criticos: number
+        }
+        Insert: {
+          created_at?: string | null
+          data: string
+          total_abertos?: number
+          total_atrasados?: number
+          total_criticos?: number
+        }
         Update: {
-          companies_per_page?: number
-          created_at?: string
-          id?: string
-          ignore_green?: boolean
-          ignore_red?: boolean
-          ignore_yellow?: boolean
-          interval_seconds?: number
-          max_percentage?: number | null
-          min_percentage?: number | null
-          monitoring_type?: string
-          theme_danger?: string | null
-          theme_success?: string | null
-          theme_warning?: string | null
-          threshold_atencao?: number | null
-          threshold_attention?: number | null
-          threshold_critical?: number | null
-          threshold_excelente?: number | null
-          threshold_excellent?: number | null
-          updated_at?: string
+          created_at?: string | null
+          data?: string
+          total_abertos?: number
+          total_atrasados?: number
+          total_criticos?: number
+        }
+        Relationships: []
+      }
+      resumo_mps_dia: {
+        Row: {
+          created_at: string | null
+          data: string
+          empresa: string
+          percentual: number
+          total_base: number
+          total_sem_comunicacao: number
+        }
+        Insert: {
+          created_at?: string | null
+          data: string
+          empresa: string
+          percentual?: number
+          total_base?: number
+          total_sem_comunicacao?: number
+        }
+        Update: {
+          created_at?: string | null
+          data?: string
+          empresa?: string
+          percentual?: number
+          total_base?: number
+          total_sem_comunicacao?: number
+        }
+        Relationships: []
+      }
+      resumo_sla_fila_dia: {
+        Row: {
+          created_at: string | null
+          data: string
+          dentro: number
+          fila: string
+          fora: number
+          percentual: number
+          total: number
+        }
+        Insert: {
+          created_at?: string | null
+          data: string
+          dentro?: number
+          fila: string
+          fora?: number
+          percentual?: number
+          total?: number
+        }
+        Update: {
+          created_at?: string | null
+          data?: string
+          dentro?: number
+          fila?: string
+          fora?: number
+          percentual?: number
+          total?: number
+        }
+        Relationships: []
+      }
+      resumo_sla_projeto_dia: {
+        Row: {
+          created_at: string | null
+          data: string
+          dentro: number
+          fora: number
+          nome_projeto: string
+          percentual: number
+          total: number
+        }
+        Insert: {
+          created_at?: string | null
+          data: string
+          dentro?: number
+          fora?: number
+          nome_projeto: string
+          percentual?: number
+          total?: number
+        }
+        Update: {
+          created_at?: string | null
+          data?: string
+          dentro?: number
+          fora?: number
+          nome_projeto?: string
+          percentual?: number
+          total?: number
         }
         Relationships: []
       }
@@ -575,7 +686,7 @@ export type Database = {
           categoria_perda_sla: string | null
           cidade: string | null
           conta_atribuida: string | null
-          created_at: string
+          created_at: string | null
           data_criacao: string | null
           data_fechamento: string | null
           dentro: number
@@ -608,16 +719,16 @@ export type Database = {
           categoria_perda_sla?: string | null
           cidade?: string | null
           conta_atribuida?: string | null
-          created_at?: string
+          created_at?: string | null
           data_criacao?: string | null
           data_fechamento?: string | null
-          dentro?: number
+          dentro: number
           dentro_fora: string
           dia?: number | null
           divisao_perda_sla?: string | null
           empresa?: string | null
           fila?: string | null
-          fora?: number
+          fora: number
           id?: string
           mes?: string | null
           motivo_perda_sla?: string | null
@@ -626,7 +737,7 @@ export type Database = {
           numero_serie?: string | null
           observacao_perda_sla?: string | null
           produto_descricao?: string | null
-          qtde_pausa?: number
+          qtde_pausa: number
           sla_contratual?: string | null
           sla_perdido?: string | null
           sla_solucao?: number | null
@@ -641,7 +752,7 @@ export type Database = {
           categoria_perda_sla?: string | null
           cidade?: string | null
           conta_atribuida?: string | null
-          created_at?: string
+          created_at?: string | null
           data_criacao?: string | null
           data_fechamento?: string | null
           dentro?: number
@@ -684,12 +795,12 @@ export type Database = {
         }
         Insert: {
           created_at?: string | null
-          dentro?: number
-          fora?: number
+          dentro: number
+          fora: number
           id?: number
           nome_fila: string
-          percentual?: number
-          total?: number
+          percentual: number
+          total: number
         }
         Update: {
           created_at?: string | null
@@ -715,14 +826,14 @@ export type Database = {
           valid_to: string | null
         }
         Insert: {
-          ativo?: boolean
+          ativo: boolean
           created_at?: string | null
           id?: string
           identificador: string
           meta_atencao?: number | null
           meta_excelente?: number | null
           tipo: string
-          valid_from?: string
+          valid_from: string
           valid_to?: string | null
         }
         Update: {
@@ -752,7 +863,7 @@ export type Database = {
           tipo: string
         }
         Insert: {
-          alterado_em?: string
+          alterado_em: string
           alterado_por?: string | null
           id?: string
           identificador: string
@@ -791,12 +902,12 @@ export type Database = {
         Insert: {
           created_at?: string | null
           created_at_hour?: string | null
-          dentro?: number
-          fora?: number
+          dentro: number
+          fora: number
           id?: number
           nome_projeto: string
-          percentual?: number
-          total?: number
+          percentual: number
+          total: number
         }
         Update: {
           created_at?: string | null
@@ -810,9 +921,39 @@ export type Database = {
         }
         Relationships: []
       }
+      sla_resumo_mensal: {
+        Row: {
+          causes_json: Json
+          history_json: Json
+          id: string
+          kpis_json: Json
+          mes_ref: string
+          tipo: string
+          updated_at: string | null
+        }
+        Insert: {
+          causes_json: Json
+          history_json: Json
+          id?: string
+          kpis_json: Json
+          mes_ref: string
+          tipo: string
+          updated_at?: string | null
+        }
+        Update: {
+          causes_json?: Json
+          history_json?: Json
+          id?: string
+          kpis_json?: Json
+          mes_ref?: string
+          tipo?: string
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
       smtp_settings: {
         Row: {
-          created_at: string
+          created_at: string | null
           enabled: boolean
           id: string
           smtp_from_email: string
@@ -825,20 +966,20 @@ export type Database = {
           updated_at: string
         }
         Insert: {
-          created_at?: string
-          enabled?: boolean
+          created_at?: string | null
+          enabled: boolean
           id?: string
           smtp_from_email: string
           smtp_from_name: string
           smtp_host: string
           smtp_password: string
           smtp_port: number
-          smtp_secure?: boolean
+          smtp_secure: boolean
           smtp_user: string
-          updated_at?: string
+          updated_at: string
         }
         Update: {
-          created_at?: string
+          created_at?: string | null
           enabled?: boolean
           id?: string
           smtp_from_email?: string
@@ -901,80 +1042,18 @@ export type Database = {
       }
     }
     Views: {
-      backlog_inicio_fim_dia: {
-        Row: {
-          data_snapshot: string | null
-          periodo: string | null
-          total_backlog: number | null
-        }
-        Relationships: []
-      }
-      backlog_variacao_diaria: {
-        Row: {
-          data_snapshot: string | null
-          variacao: number | null
-        }
-        Relationships: []
-      }
-      mv_sla_fila_rn: {
-        Row: {
-          dentro: number | null
-          fila: string | null
-          fora: number | null
-          percentual: number | null
-          total: number | null
-        }
-        Relationships: []
-      }
-      mv_sla_projetos_rn: {
-        Row: {
-          dentro: number | null
-          fora: number | null
-          nome_projeto: string | null
-          percentual: number | null
-          total: number | null
-        }
-        Relationships: []
-      }
-      v_sla_metas_ativas: {
-        Row: {
-          ativo: boolean | null
-          created_at: string | null
-          id: string | null
-          identificador: string | null
-          meta_atencao: number | null
-          meta_excelente: number | null
-          tipo: string | null
-          valid_from: string | null
-          valid_to: string | null
-        }
-        Insert: {
-          ativo?: boolean | null
-          created_at?: string | null
-          id?: string | null
-          identificador?: string | null
-          meta_atencao?: number | null
-          meta_excelente?: number | null
-          tipo?: string | null
-          valid_from?: string | null
-          valid_to?: string | null
-        }
-        Update: {
-          ativo?: boolean | null
-          created_at?: string | null
-          id?: string | null
-          identificador?: string | null
-          meta_atencao?: number | null
-          meta_excelente?: number | null
-          tipo?: string | null
-          valid_from?: string | null
-          valid_to?: string | null
-        }
-        Relationships: []
-      }
+      [_ in never]: never
     }
     Functions: {
-      fn_generate_sla_snapshots: { Args: never; Returns: undefined }
+      calculate_monthly_sla_json: {
+        Args: { p_end_date: string; p_start_date: string; p_tipo: string }
+        Returns: Json
+      }
+      consolidate_daily_summaries: {
+        Args: { target_date?: string }
+        Returns: undefined
+      }
+      get_backlog_summary: { Args: never; Returns: Json }
       get_latest_sla_records: {
         Args: { p_records_per_item?: number; p_type: string }
         Returns: {
@@ -988,16 +1067,15 @@ export type Database = {
           total: number
         }[]
       }
-      get_mps_history: {
-        Args: { end_date: string; start_date: string }
-        Returns: {
-          data_gravacao: string
-          empresa: string
-          percentual: number
-          total_base: number
-          total_sem_monitoramento: number
-        }[]
-      }
+      get_monthly_sla_kpis:
+        | {
+            Args: { p_end_date: string; p_start_date: string; p_tipo: string }
+            Returns: Json
+          }
+        | {
+            Args: { p_end_date: string; p_start_date: string; p_tipo: string }
+            Returns: Json
+          }
       get_sla_daily_evolution: {
         Args: { p_month?: string }
         Returns: {
@@ -1023,37 +1101,20 @@ export type Database = {
           recorded_at: string
         }[]
       }
-      get_sla_projetos_monthly_list: {
-        Args: { p_page_num?: number; p_page_size?: number; p_search?: string }
-        Returns: {
-          dentro: number
-          fora: number
-          nome_projeto: string
-          percentual: number
-          total: number
-          total_count: number
-        }[]
+      processar_backlog_diario: { Args: never; Returns: undefined }
+      rpc_login: {
+        Args: { p_login: string; p_password: string }
+        Returns: Json
       }
-      get_sla_projetos_monthly_summary: {
-        Args: { p_threshold_attention?: number; p_threshold_excellent?: number }
-        Returns: {
-          average_percentual: number
-          count_attention: number
-          count_critical: number
-          count_excellent: number
-          total_dentro: number
-          total_fora: number
-          total_geral: number
-        }[]
-      }
-      processar_backlog_diario:
-        | { Args: never; Returns: undefined }
-        | { Args: { p_periodo: string }; Returns: undefined }
-      record_sla_snapshot_internal: { Args: never; Returns: undefined }
-      refresh_mv_sla_fila: { Args: never; Returns: undefined }
-      refresh_mv_sla_projetos: { Args: never; Returns: undefined }
+      rpc_logout: { Args: { p_token: string }; Returns: Json }
+      rpc_validate_session: { Args: { p_token: string }; Returns: Json }
       truncate_backlog_monitoramento: { Args: never; Returns: undefined }
+      truncate_monitoramento_parque: { Args: never; Returns: undefined }
       truncate_sla_detalhado_rn: { Args: never; Returns: undefined }
+      update_monthly_sla_summaries: {
+        Args: { p_month: string }
+        Returns: undefined
+      }
     }
     Enums: {
       [_ in never]: never
@@ -1186,3 +1247,4 @@ export const Constants = {
     Enums: {},
   },
 } as const
+

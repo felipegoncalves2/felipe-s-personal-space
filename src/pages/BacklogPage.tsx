@@ -142,17 +142,13 @@ export function BacklogPage() {
 
                     {/* KPIs Intradiários */}
                     <div className="mt-2">
-                        <div className="flex items-center gap-2 mb-4">
-                            <div className="h-1 w-8 bg-primary rounded-full"></div>
-                            <h2 className="text-sm font-bold uppercase tracking-widest text-muted-foreground">Performance do Dia</h2>
-                        </div>
                         <BacklogIntradiarioKPIs
-                            inicioDia={intradiaryStats.inicioDia}
-                            fimDia={intradiaryStats.fimDia}
-                            backlogAtual={intradiaryStats.backlogAtual}
-                            variacao={intradiaryStats.variacao}
-                            porcentagemReducao={intradiaryStats.porcentagemReducao}
-                            isAfter18={intradiaryStats.isAfter18}
+                            currentBacklog={intradiaryStats.currentBacklog}
+                            todayStart={intradiaryStats.todayStart}
+                            todayVariation={intradiaryStats.todayVariation}
+                            yesterdayStart={intradiaryStats.yesterdayStart}
+                            yesterdayEnd={intradiaryStats.yesterdayEnd}
+                            yesterdayVariation={intradiaryStats.yesterdayVariation}
                         />
                     </div>
 
