@@ -92,8 +92,8 @@ async function fetchMPSHistory(identifier: string, granularity: Granularity): Pr
             fullDate: item.data_gravacao
         };
 
-        current.total_base += (parseInt(item.total_base as string) || 0);
-        current.total_sem_monitoramento += (parseInt(item.total_sem_monitoramento as string) || 0);
+        current.total_base += (Number(item.total_base) || 0);
+        current.total_sem_monitoramento += (Number(item.total_sem_monitoramento) || 0);
         aggregated.set(key, current);
     });
 

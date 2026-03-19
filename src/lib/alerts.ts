@@ -39,15 +39,16 @@ export async function persistAlert(params: PersistAlertParams) {
         // Insert new alert
         const { error: insertError } = await supabase
             .from('monitoring_alerts')
-            .insert({
+            .insert([{
                 tipo_monitoramento: params.tipo_monitoramento,
                 identificador_item: params.identificador_item,
                 alert_type: params.alert_type,
                 severity: params.severity,
                 percentual_atual: params.percentual_atual,
                 contexto: params.contexto,
-                detected_at: new Date().toISOString()
-            });
+                detected_at: new Date().toISOString(),
+                tratado: false
+            }]);
 
         if (insertError) {
             console.error('Error persisting alert:', insertError);
