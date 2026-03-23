@@ -29,16 +29,26 @@ export function useFluxoOperacional() {
             const startDateStr = format(startOfCurrMonth, 'yyyy-MM-dd');
             const endDateStr = format(endOfData, 'yyyy-MM-dd');
 
-            // 1. Fetch created tickets for the month
-            const { data: openedData, error: openedError } = await supabase
+            // 1. Fetch created tickets for the month from backlog
+            const { data: openedDataBacklog, error: openedErrorBacklog } = await supabase
                 .from('backlog_monitoramento' as any)
-                .select('data_criacao')
+                .select('numero_referencia, data_criacao')
                 .gte('data_criacao', `${startDateStr}T00:00:00`)
                 .lte('data_criacao', `${endDateStr}T23:59:59`);
 
-            if (openedError) throw openedError;
+            if (openedErrorBacklog) throw openedErrorBacklog;
 
-            // 2. Fetch closed tickets for the month
+            // 2. Fetch created tickets for the month from SLA detalhado
+            const { data: openedDataSla, error: openedErrorSla } = await supabase
+                .from('sla_detalhado_rn')
+                .select('numero_referencia, data_criacao')
+                .not('data_criacao', 'is', null)
+                .gte('data_criacao', `${startDateStr}T00:00:00`)
+                .lte('data_criacao', `${endDateStr}T23:59:59`);
+
+            if (openedErrorSla) throw openedErrorSla;
+
+            // 3. Fetch closed tickets for the month from SLA detalhado
             const { data: closedData, error: closedError } = await supabase
                 .from('sla_detalhado_rn')
                 .select('data_fechamento')
@@ -48,16 +58,35 @@ export function useFluxoOperacional() {
 
             if (closedError) throw closedError;
 
-            // 3. Process data by day
+            // 4. Process data by day
             const days = eachDayOfInterval({ start: startOfCurrMonth, end: endOfData });
 
             const openedByDay: Record<string, number> = {};
             const closedByDay: Record<string, number> = {};
+            
+            // Usar um Set para rastrear quais chamados já foram contados por dia para evitar duplicidade
+            const processedTicketsByDay: Record<string, Set<string>> = {};
 
-            (openedData as any[])?.forEach((item: any) => {
+            const processOpenedTicket = (item: any) => {
+                if (!item.data_criacao) return;
                 const d = format(parseISO(item.data_criacao), 'yyyy-MM-dd');
-                openedByDay[d] = (openedByDay[d] || 0) + 1;
-            });
+                const ticketRef = item.numero_referencia;
+                
+                if (!processedTicketsByDay[d]) {
+                    processedTicketsByDay[d] = new Set();
+                }
+                
+                if (ticketRef && !processedTicketsByDay[d].has(ticketRef)) {
+                    processedTicketsByDay[d].add(ticketRef);
+                    openedByDay[d] = (openedByDay[d] || 0) + 1;
+                } else if (!ticketRef) {
+                    // Fallback se não tiver numero_referencia (apenas incrementa)
+                    openedByDay[d] = (openedByDay[d] || 0) + 1;
+                }
+            };
+
+            (openedDataBacklog as any[])?.forEach(processOpenedTicket);
+            (openedDataSla as any[])?.forEach(processOpenedTicket);
 
             closedData?.forEach(item => {
                 const d = format(parseISO(item.data_fechamento), 'yyyy-MM-dd');
